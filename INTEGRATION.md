@@ -25,9 +25,12 @@ The Python backend and Desktop half are separately opt-in. Follow-up: Python was
 user enablement or theme preferences. The Desktop contribution declares
 `defaultEnabled:false`. Initial isolated CLI validation did not change `plugins.enabled`. The subsequent approved enablement now permits normal new-session discovery; a native list dispatch passed without manually forcing this plugin to load.
 The installed Desktop synchronizer created the app-level copy automatically.
-The v0.22.7 backend supports hot-mount on first authorized request after enablement;
-Desktop supports Rescan/hot reload. **No service restart is currently established
-as necessary. Ask Kyle before any restart, including the Poptart sidecar.**
+Restarts: **`hermes-gateway` must be restarted after a backend route change on an
+already-mounted plugin**, because v0.22.7 refuses to hot-remount an existing plugin API
+namespace (confirmed on moltussy-1 for v0.2.1). On a first install, hot-mount on the first
+authorized request after enablement may work; if the pane reports a backend error, restart
+`hermes-gateway`. Frontend-only changes need only Desktop Rescan/Webapp reload plus a pane
+reload. **Ask Kyle before any restart, including the Poptart sidecar.**
 
 ## Backend and tool
 

@@ -69,30 +69,28 @@ npm ci
 npm run build
 ```
 
-**Option A: install with Hermes**
+**Option A: from the Hermes catalog** *(pending: available once the catalog PR is merged)*
 
 ```sh
-hermes plugins install ./integration/hermes
+hermes plugins install hermes-strudel-studio --enable
 ```
 
-**Option B: symlink (handy for development)**
+**Option B: manual (clone + symlink)**
 
 ```sh
+git clone https://github.com/mojomast/poptart.git && cd poptart
+npm ci && npm run build
 ln -s "$PWD/integration/hermes" ~/.hermes/plugins/hermes-strudel-studio
-```
-
-Then validate and enable it:
-
-```sh
-hermes plugins doctor integration/hermes --ci
-hermes plugins validate integration/hermes --install-deps
 hermes plugins enable hermes-strudel-studio
+hermes plugins doctor
 ```
+
+`hermes plugins install` takes a catalog name, Git URL or owner/repo, not a local path. Use the symlink for a local checkout.
 
 The backend and the Desktop pane are each opt-in; the Desktop contribution ships with `defaultEnabled: false`. Turn on the pane under **Capabilities → Plugins → Strudel Studio → Desktop**, then Rescan or reload.
 
 > [!IMPORTANT]
-> **Restart `hermes-gateway` after a first install or any backend route change.** Hermes won't hot-remount a plugin API namespace that is already mounted, so new `/api/plugins/hermes-strudel-studio/*` routes stay stale until the gateway restarts. Frontend-only updates only need a Rescan or Webapp reload, then a pane reload. Reloading the pane stops its audio.
+> **Restart `hermes-gateway` after a backend route change on an already-mounted plugin.** Hermes won't hot-remount a mounted plugin API namespace, so changed `/api/plugins/hermes-strudel-studio/*` routes stay stale until the gateway restarts. On a first install, hot-mount may work; if the pane reports a backend error, restart `hermes-gateway`. Frontend-only updates only need a Rescan or Webapp reload, then a pane reload. Reloading the pane stops its audio.
 
 To turn it off: `hermes plugins disable hermes-strudel-studio`. Full details are in [INTEGRATION.md](INTEGRATION.md).
 
@@ -181,7 +179,7 @@ The browser suites check for non-zero audio in headless Chromium, confirm that p
 | Symptom | Fix |
 |---|---|
 | No sound | Click **Play / apply** first, since browsers need a gesture. A remote Webapp needs a secure context (HTTPS or a localhost tunnel). |
-| Pane shows old routes or a 404 after an update | Backend routes changed, so restart `hermes-gateway` (Hermes won't hot-remount). |
+| Pane reports a backend error (first install, or after a backend route update) | Restart `hermes-gateway`. Hermes won't hot-remount an already-mounted plugin API. |
 | Pane shows the old UI | Rescan or reload the Webapp, then reload the pane. |
 | `SERVICE_UNAVAILABLE` | Check `npm run build` and Node. Restart the sidecar only deliberately, keep tracks and the token, and never start a second owner on the same store. |
 | `CONFLICT` | Someone (maybe you) edited first. Re-read with `get` and retry with the new `expectedRevision`. |
