@@ -3,6 +3,7 @@ import type { ToolRequest, ToolResult, Track } from '../shared/contracts';
 import { envelope, valid, randomId } from './protocol';
 import './hermes-config';
 import { applyTheme, normalizeTheme } from './theme';
+import { PatternEditor, type PatternEditorHandle } from './PatternEditor';
 
 const starter = 'stack(\n  note("c2 ~ c2 ~").s("triangle").decay(0.2),\n  note("<c3 eb3 g3 bb3>").s("sawtooth").lpf(800),\n  note("c5 eb5 g5 eb5").s("sine").gain(0.3)\n)';
 const frameParams = new URLSearchParams(location.hash.slice(1));
@@ -21,6 +22,7 @@ export function Player() {
   const [expanded, setExpanded] = useState(true);
   const [message, setMessage] = useState('');
   const pending = useRef(new Map<string, { resolve: (r: ToolResult) => void; timer: number }>());
+  const patternEditor = useRef<PatternEditorHandle>(null);
   const audioFrame = useRef<HTMLIFrameElement>(null);
   const theme = useRef(normalizeTheme(window.__POPTART_HOST__?.theme));
   useLayoutEffect(() => { theme.current = applyTheme(theme.current); }, []);
@@ -63,7 +65,12 @@ export function Player() {
   }, []);
   useEffect(() => {
     const receive = (event: MessageEvent) => {
-      if (event.source === audioFrame.current?.contentWindow && event.data?.version === 1 && event.data.type === 'audio.ready') { sendPattern(); return; }
+      if (event.source === audioFrame.current?.contentWindow && event.data?.version === 1) {
+        if (event.data.type === 'audio.ready') sendPattern();
+        if (event.data.type === 'audio.evaluated' && typeof event.data.code === 'string' && event.data.code.length <= 100000) patternEditor.current?.evaluated(event.data.code);
+        if (event.data.type === 'audio.highlights') patternEditor.current?.highlight(event.data.ranges);
+        return; // Execution guest may never issue privileged host requests.
+      }
       if (event.source !== window.parent || (event.origin !== hostOrigin && !(opaqueRelay && event.origin === 'null')) || !valid(event.data, capability)) return;
       const m = event.data;
       if (m.type === 'theme') updateTheme(m.payload);
@@ -99,7 +106,7 @@ export function Player() {
     <main className="editor">{track ? <><div className="editor-heading"><div><div className="eyebrow">NOW EDITING <span>/</span> TRACK {String(Math.max(0, tracks.findIndex(t => t.id === track.id)) + 1).padStart(2, '0')}</div><input className="title-input" aria-label="Track title" value={track.title} onChange={e => update({ title: e.target.value })}/><div className="track-meta">YOUR SOUND, YOUR RULES <span>✳</span> REV {track.revision}</div></div><button className="save-button" onClick={save} disabled={!dirty || busy}>{busy ? 'Saving…' : dirty ? 'Save changes ↗' : '✓ Saved'}</button></div>
       <div className="section-bar"><div className="section-tabs"><button className={!sectionId ? 'selected' : ''} onClick={() => setSectionId(null)}>Main pattern</button>{track.sections.map(s => <button className={sectionId === s.id ? 'selected' : ''} key={s.id} onClick={() => setSectionId(s.id)}>{s.name}</button>)}<button className="add-section" onClick={addSection}>＋ <span>Section</span></button></div><span className="section-label">PATTERN / {activeSection ? activeSection.name.toUpperCase() : 'MAIN'}</span></div>
       {activeSection && <div className="section-edit"><label>SECTION NAME <input value={activeSection.name} onChange={e => update({ sections: track.sections.map(s => s.id === activeSection.id ? { ...s, name: e.target.value } : s) })}/></label><button onClick={() => { update({ sections: track.sections.filter(s => s.id !== activeSection.id) }); setSectionId(null); }}>Remove section ×</button></div>}
-      <div className="code-editor"><div className="code-top"><span><i/> PATTERN EDITOR</span><span>STRUDEL / JS</span></div><div className="code-content"><div className="line-numbers" aria-hidden="true">{code.split('\n').map((_, i) => <div key={i}>{String(i + 1).padStart(2, '0')}</div>)}</div><textarea aria-label="Pattern code" spellCheck={false} value={code} onChange={e => setCode(e.target.value)}/></div><div className="code-bottom"><span>✳ &nbsp; MAKE IT YOURS</span><span>{code.split('\n').length} LINES</span></div></div>
+      <div className="code-editor"><div className="code-top"><span><i/> PATTERN EDITOR</span><span>STRUDEL / JS</span></div><div className="code-content"><div className="line-numbers" aria-hidden="true">{code.split('\n').map((_, i) => <div key={i}>{String(i + 1).padStart(2, '0')}</div>)}</div><PatternEditor ref={patternEditor} code={code} onChange={setCode}/></div><div className="code-bottom"><span>✳ &nbsp; MAKE IT YOURS</span><span>{code.split('\n').length} LINES</span></div></div>
       <div className="transport"><iframe ref={audioFrame} title="Isolated audio controls" src={window.__POPTART_GUEST__?.audioHtml ? undefined : "/audio"} srcDoc={window.__POPTART_GUEST__?.audioHtml} sandbox="allow-scripts" onLoad={sendPattern} style={{border:0,width:'100%',height:96}}/><label className="tempo"><span>TEMPO</span><input type="number" min="20" max="400" aria-label="Tempo" value={track.tempo} onChange={e => update({ tempo: Number(e.target.value) })}/><b>BPM</b></label></div>{message && <div className="notice" role="status">{message}</div>}</> : <div className="welcome"><span className="welcome-icon">✳</span><div className="eyebrow">A GOOD PLACE TO START</div><h2>Let's make<br/><em>some noise.</em></h2><p>Every great track starts somewhere. Create a track and start playing with patterns.</p><button className="save-button" disabled={!connected || busy} onClick={create}>＋ &nbsp; Create your first track</button>{message && <div className="notice">{message}</div>}</div>}</main><aside className="library"><div className="library-title"><div><span className="eyebrow">YOUR LIBRARY</span><h3>Tracks <span>{String(tracks.length).padStart(2, '0')}</span></h3></div><button className="add-button" onClick={create} disabled={!connected || busy} aria-label="New track">＋</button></div><div className="track-list">{tracks.map((t, i) => <button key={t.id} className={'track-item ' + (track?.id === t.id ? 'active' : '')} onClick={() => select(t)}><span className="track-index">{String(i + 1).padStart(2, '0')}</span><span className="track-name">{t.title}<small>{t.tempo} BPM</small></span><span>↗</span></button>)}{!tracks.length && <p className="empty-library">Your tracks will live here.<br/>Start with a fresh idea.</p>}</div><button className="new-track" onClick={create} disabled={!connected || busy}>＋ <span>New track</span></button><div className="library-bottom"><span>✳</span> A LITTLE EVERY DAY<br/><small>MAKES A LOT OF SOMEDAY.</small></div></aside></div>
     <div className="studio-footer"><span>✳ &nbsp; MADE TO BE PLAYED</span><span>THE POSSIBILITIES ARE ENDLESS &nbsp; ↗</span></div></div>;
 }

@@ -1,3 +1,42 @@
+# v0.2.4 — scheduler-synced mini-notation highlights (not deployed)
+
+Implemented directly on `feat/hermes-strudel-studio`; the v0.2.3 tag remains at
+`27268c24021880a54b155075dc63a1049cfc017e`. No deploy, restart, tag, release,
+merge or catalog change is part of this work.
+
+- Uses Strudel's own `@strudel/draw` Drawer (existing transitive version 1.2.5,
+  now a pinned direct dependency), matching StrudelMirror 1.2.6's
+  `haps.filter(hap => hap.isActive(time))` and `hap.context.locations` mechanism.
+  `Drawer` reads the REPL scheduler/Web Audio clock, with `[0,0]` draw time.
+- Shared Player/Audio implementation covers both standalone and packaged Hermes
+  guests. Changed integer range sets cross source/version-checked, informational
+  messages only. One evaluated-source notification per source change; no host
+  capability/credentials are sent into the execution guest, no tool-schema change.
+- An inert, text-node-only overlay paints the accessible textarea. RAF has no
+  React state updates; unchanged ranges do not send messages or rebuild DOM.
+  Marks follow `--studio-accent`, including live Hermes theme changes/dark fallback.
+- Stop cancels animation and clears marks. Successful apply and runtime-error
+  recovery reset the Drawer cache against the correct Pattern. Syntax errors
+  leave the last-good Drawer intact. Audio continues on rejected applies.
+- **Deliberate dirty-buffer policy:** highlights are hidden whenever the current
+  buffer differs from last-good source. Restoring that source resumes highlights
+  without re-evaluation; a successful Play/apply installs new locations. No stale
+  offsets are drawn on invalid/unapplied code; position remapping is not claimed.
+- Headless screenshot: `/workspace/poptart-video/highlights-v024.png`, actual
+  packaged guest with a disposable nine-layer complex track and the SDK-shell/CSP
+  fixture. Not a signed-in Hermes capture; no Kyle chats/sessions are present.
+  Standalone capture: `/workspace/poptart-video/highlights-standalone-v024.png`.
+
+Deployment would be **frontend-only**: rebuild on the approved host and reload
+its pane. The current v2 bootstrap reads the generated document per request; no
+gateway/sidecar restart or backend route change is needed. Nothing was deployed.
+Real signed-in v0.2.4 and physical-speaker checks remain unrun. RAF may miss very
+short events and is browser-throttled in background frames, independently of
+audio. Strudel's native locations include active instrument/repeat-count tokens,
+not just pitch names. Existing arbitrary-JS and license-review caveats still apply.
+
+---
+
 # v0.2.3 — right-hand library and Hermes painted theme
 
 Verified SDK: installed Hermes v0.22.7 (`b200f5bc60e31588ba2cb60e288029c4a54ba5fa`). The documented `useTheme()` returns the painted `theme` and `renderedMode` (including accent/previews). SandboxedFrame does not automatically forward theme data. The bridge allowlists color tokens and font-family names, sends theme version 1 in initial binding/init and live `theme` envelopes, and relays them to the independently opaque audio controls. No custom CSS/font URLs, host DOM reads, setting writes, same-origin permission or core imports. Theme updates do not remount the guest or stop audio. Studio-owned CSS variables cover backgrounds, surfaces, text/muted/accent, borders, errors, textarea/editor/gutter/caret, inputs and buttons; absent/invalid theme data falls back to dark. The editor is a textarea, not CodeMirror.

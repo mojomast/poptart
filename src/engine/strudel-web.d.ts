@@ -13,3 +13,18 @@ declare module '@strudel/web' {
   export function getSuperdoughAudioController(): { output: { destinationGain: GainNode } };
   export function samples(map: string | Record<string, unknown>, baseUrl?: string): Promise<void>;
 }
+
+// The bundled Strudel draw package does not ship TypeScript declarations.
+declare module '@strudel/draw' {
+  export interface DrawHap {
+    isActive(time: number): boolean;
+    context?: { locations?: { start: number; end: number }[] };
+  }
+  export class Drawer {
+    constructor(onDraw: (haps: DrawHap[], time: number) => void, drawTime: [number, number]);
+    visibleHaps: DrawHap[];
+    lastFrame: number | null;
+    start(scheduler: unknown): void;
+    stop(): void;
+  }
+}

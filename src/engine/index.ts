@@ -1,3 +1,4 @@
+import { Drawer } from '@strudel/draw';
 /** Browser-only Strudel controller. See README for asset and lifecycle details. */
 export type SampleBank = string | { map: Record<string, unknown>; baseUrl?: string };
 export interface EngineState {
@@ -10,6 +11,8 @@ export interface EngineState {
   sampleErrors: string[];
 }
 export interface EngineOptions { sampleBanks?: SampleBank[] }
+export type MiniRange = [number, number];
+type HighlightListener = (ranges: MiniRange[]) => void;
 type Listener = (state: EngineState) => void;
 type Module = typeof import('@strudel/web');
 type Repl = Awaited<ReturnType<Module['initStrudel']>>;
@@ -24,6 +27,39 @@ class StrudelEngine {
   private initializing: Promise<void> | null = null;
   private audioInitializing: Promise<void> | null = null;
   private listeners = new Set<Listener>();
+  private highlightListeners = new Set<HighlightListener>();
+  // Same scheduler-backed Drawer/currentFrame mechanism as StrudelMirror 1.2.6.
+  // Separate imperative subscribers: never publish animation frames as React state.
+  private drawer = new Drawer((haps, time) => {
+    const ranges = new Map<string, MiniRange>();
+    for (const hap of haps) {
+      if (!hap.isActive(time)) continue;
+      for (const { start, end } of hap.context?.locations ?? []) {
+        if (Number.isInteger(start) && Number.isInteger(end) && start >= 0 && end > start && end <= (this.state.lastGoodCode?.length ?? 0)) {
+          ranges.set(`${start}:${end}`, [start, end]);
+        }
+      }
+    }
+    this.publishHighlights([...ranges.values()].sort((a, b) => a[0] - b[0] || a[1] - b[1]));
+  }, [0, 0]);
+  private highlightKey = '';
+  subscribeHighlights = (listener: HighlightListener): (() => void) => {
+    this.highlightListeners.add(listener);
+    return () => { this.highlightListeners.delete(listener); };
+  };
+  private publishHighlights(ranges: MiniRange[]) {
+    const key = JSON.stringify(ranges);
+    if (key === this.highlightKey) return;
+    this.highlightKey = key;
+    this.highlightListeners.forEach(listener => listener(ranges));
+  }
+  private resetDrawer() {
+    this.drawer.stop();
+    this.drawer.visibleHaps = [];
+    this.drawer.lastFrame = null;
+    this.publishHighlights([]);
+    if (this.repl && this.state.playing) this.drawer.start(this.repl.scheduler);
+  }
   private generation = 0;
   private queue: Promise<unknown> = Promise.resolve();
   private state: EngineState = { ready: false, playing: false, muted: false, gain: 0.8, lastGoodCode: null, error: null, sampleErrors: [] };
@@ -53,7 +89,10 @@ class StrudelEngine {
         const mod = await import('@strudel/web');
         this.mod = mod;
         // Strudel catches evaluation exceptions; inspect repl.state after evaluate.
-        this.repl = await mod.initStrudel({ onToggle: (playing: boolean) => this.update({ playing }) });
+        this.repl = await mod.initStrudel({ onToggle: (playing: boolean) => {
+          this.update({ playing });
+          if (!playing) { this.drawer.stop(); this.publishHighlights([]); }
+        } });
         this.applyGain();
         const errors: string[] = [];
         for (const bank of options.sampleBanks ?? []) {
@@ -112,6 +151,7 @@ class StrudelEngine {
         if (token !== this.generation) { this.repl!.stop(); return; }
         if (bpm !== undefined) this.repl!.setCps(bpm / 240);
         this.update({ playing: this.repl!.state.started, lastGoodCode: code, error: null });
+        this.resetDrawer();
       } catch (error) {
         if (token === this.generation) {
           let recoveryError = '';
@@ -121,6 +161,7 @@ class StrudelEngine {
               // re-run arbitrary user code or replay its side effects on failure.
               await this.repl!.setPattern(previous.pattern, true);
               this.repl!.setCps(previous.cps);
+              this.resetDrawer();
               if (token !== this.generation) { this.repl!.stop(); return; }
             } catch (failure) { recoveryError = `; playback recovery failed: ${message(failure)}`; }
           }
@@ -136,6 +177,8 @@ class StrudelEngine {
 
   stop = (): void => {
     ++this.generation;
+    this.drawer.stop();
+    this.publishHighlights([]);
     this.repl?.stop();
     this.update({ playing: false });
   };
@@ -146,7 +189,7 @@ class StrudelEngine {
   };
   setMuted = (muted: boolean): void => { this.update({ muted }); this.applyGain(); };
   /** Stop and remove subscriptions; the global audio context stays reusable. */
-  dispose = (): void => { this.stop(); this.listeners.clear(); };
+  dispose = (): void => { this.stop(); this.listeners.clear(); this.highlightListeners.clear(); };
 }
 
 export const engine = new StrudelEngine();

@@ -1,3 +1,4 @@
+import {testHighlights} from './highlights.mjs';
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
@@ -40,6 +41,7 @@ try {
    let max=0; for(let i=0;i<30;i++){const d=new Float32Array(analyser.fftSize);analyser.getFloatTimeDomainData(d);max=Math.max(max,...d.map(Math.abs));await new Promise(r=>setTimeout(r,50));}return max;
  });
  assert.ok(peak>0.00001,`expected nonzero sample audio, got ${peak}`);
+ await testHighlights({page,player,audio,audioFrame:af,screenshot:process.env.POPTART_STANDALONE_HIGHLIGHT_SCREENSHOT});
  const denied=await af.evaluate(async()=>{try {const r=await fetch('/api/tool',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({operation:'track.list',input:{}})});return r.status;} catch {return 'blocked';}});
  assert.ok(denied === 403 || denied === 'blocked');
  await editor.fill('s("bd*4)'); await audio.getByRole('button',{name:'Play',exact:true}).click();

@@ -5,7 +5,7 @@
 **A local [Strudel](https://strudel.cc) live-coding studio: write patterns, hit Play, and let your Hermes agent compose alongside you.**
 
 [![License: AGPL-3.0-or-later](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue)](LICENSE)
-[![Hermes plugin](https://img.shields.io/badge/Hermes_plugin-v0.2.3-7c5cff)](integration/hermes/plugin.yaml)
+[![Hermes plugin](https://img.shields.io/badge/Hermes_plugin-v0.2.4-7c5cff)](integration/hermes/plugin.yaml)
 [![Requires Hermes](https://img.shields.io/badge/Hermes-%E2%89%A5%200.22.7-informational)](INTEGRATION.md)
 [![Strudel](https://img.shields.io/badge/Strudel-1.2.6-a3e635)](package.json)
 [![Node](https://img.shields.io/badge/node-22%2B-339933)](#quick-start-standalone-studio)
@@ -32,6 +32,7 @@ Strudel is a fantastic way to make music in code. poptart turns it into a **work
 ## Features
 
 - 🎛️ **Live-coding editor.** Strudel/JS pattern editor with line numbers, a tempo field and Play / apply, Stop and Mute transport.
+- ✨ **Tokens light up as they play.** Scheduler-synced mini-notation highlights use your Hermes accent. Stop clears them; editing pauses highlights until the buffer matches the last applied code (or you apply successfully).
 - 🛟 **Edits can't kill the groove.** An invalid edit (syntax or runtime error) keeps the last good pattern playing and shows the error separately.
 - 🗂️ **Track library.** Persistent tracks, each with a **revision** number, **snapshots** with restore, and named **sections** (for example Intro / Main / Break).
 - 🤖 **One composable agent tool.** `poptart_studio` covers 11 ops behind a single `{op, input}` call, with a **127-token** schema (o200k_base).

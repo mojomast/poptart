@@ -99,3 +99,15 @@ dispatch and the exact backend router without enabling it in a running dashboard
 It creates a validation track and leaves the first-started sidecar running. The
 PDB completion banner does not restart a service. See TEST_REPORT.md for evidence
 and HANDOFF.md for the remaining mandatory checks.
+
+
+## Mini-notation highlights (0.2.4)
+
+Frontend-only, not yet deployed. The audio guest uses Strudel's scheduler-backed
+Drawer and sends informational `audio.evaluated`/`audio.highlights` messages to
+its own parent. The parent checks version/source, bounds offsets and paints an
+inert textarea mirror with the Hermes accent. It never accepts privileged host
+requests from that child. Stop clears/cancels; rejected evaluation retains the
+last-good pattern/locations. Highlights deliberately pause for dirty buffers
+until source matches last-good or a successful apply replaces it. No tool/backend
+schema or route change; no gateway restart required. See TEST_REPORT.md.

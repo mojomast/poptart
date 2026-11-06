@@ -22,7 +22,17 @@ export function Audio() {
     addEventListener('message',receive);
     parent.postMessage({version:1,type:'audio.ready'}, '*');
     const activeEngine = engine.current;
-    return () => {removeEventListener('message',receive); activeEngine.stop();};
+    let evaluatedCode: string | null = null;
+    const unsubscribe = activeEngine.subscribe(next => {
+      if (next.lastGoodCode !== evaluatedCode) {
+        evaluatedCode = next.lastGoodCode;
+        parent.postMessage({version:1,type:'audio.evaluated',code:evaluatedCode}, '*');
+      }
+    });
+    const unsubscribeHighlights = activeEngine.subscribeHighlights(ranges => {
+      parent.postMessage({version:1,type:'audio.highlights',ranges}, '*');
+    });
+    return () => {removeEventListener('message',receive); unsubscribe(); unsubscribeHighlights(); activeEngine.stop();};
   }, []);
   const play = async () => {
     // Evaluation errors are independent of transport state. A rejected apply

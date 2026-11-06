@@ -34,3 +34,26 @@ function Player({ code }: { code: string }) {
 Built-in synths are registered by Strudel. Drum samples such as `bd` require an explicitly provided bank. Host a Strudel-format JSON manifest and referenced audio files as static assets, for example `public/samples/strudel.json` and `public/samples/kick.wav` with `{"bd":["kick.wav"]}`. Relative sample paths resolve against the manifest's directory; an `_base` entry can instead point at an asset base URL. Alternatively pass `{ map: { bd: ['kick.wav'] }, baseUrl: '/samples/' }` in `sampleBanks`. Make sure the player frame can fetch these assets, including CORS where applicable. The engine ships no sample audio or soundfonts. Manifest registration is awaited and failures appear in `state.sampleErrors`; sample files are fetched lazily during playback, so registration does not guarantee that audio files exist or decode successfully. Strudel logs those later errors itself. External manifest URLs and `github:` shortcuts are supported by upstream but depend on network access.
 
 Strudel executes JavaScript, not a restricted pattern language. Only evaluate code at the intended isolated player boundary. State and errors are local to the page; playback state does not prove that sound reached speakers.
+
+## Mini-notation highlighting (0.2.4)
+
+`subscribeHighlights(listener)` receives sorted `[start, end]` UTF-16 ranges from
+Strudel haps' `context.locations`. This uses the actual `@strudel/draw` Drawer
+already shipped transitively by Strudel, now directly pinned to 1.2.5, following
+`@strudel/codemirror@1.2.6`'s StrudelMirror currentFrame/isActive pattern.
+Drawer reads `scheduler.now()` (Web Audio time), not Date/performance time, with
+`drawTime=[0,0]`. Only changed range sets cross the nested opaque-frame bridge;
+RAF never updates React state. Successful evaluations restart/invalidate the
+Drawer with the newly evaluated pattern; runtime recovery does the same with
+the restored last-good Pattern. Syntax preflight errors leave it untouched.
+Stop cancels RAF and clears ranges. Very brief events can be missed by RAF,
+and browsers throttle painting in hidden/background frames; audio is separate.
+
+The shared accessible textarea has an inert scroll-synced `<pre>` paint layer,
+not a second evaluator or a new CodeMirror editor. The editor accepts only
+bounded integer ranges and creates text nodes, never HTML supplied by a pattern.
+Highlight styling uses `--studio-accent` from the existing theme bridge. Offsets
+are used only when the editor buffer exactly matches `lastGoodCode`: dirty or
+invalid buffers deliberately hide the old highlights, which resume if you restore
+the last applied source or successfully apply new code. No position remapping is
+claimed. Audio and last-good locations continue during failed applies.

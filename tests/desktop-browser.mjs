@@ -1,3 +1,4 @@
+import {testHighlights} from './highlights.mjs';
 // Production-asset + actual plugin.js bridge regression. A small React SDK
 // adapter loads the installed Webapp guest-shell HTML/CSP fixture. This is not
 // a signed-in real Hermes session; the browser cannot reach the sidecar.
@@ -80,8 +81,15 @@ try {
    assert.deepEqual(values,{bg:colors.background,text:colors.foreground,muted:colors.mutedForeground,accent:colors.midground||colors.ring,border:colors.border,error:colors.destructive,button:colors.secondary,editor:colors.foreground,scheme});
    assert.equal(await af.evaluate(()=>document.documentElement.style.getPropertyValue('--studio-bg')),colors.background,'audio child receives the theme');
    assert.equal(await af.evaluate(()=>document.documentElement.style.colorScheme),scheme);
+   await player.locator('.mini-highlight').first().waitFor();
+   const highlightTheme=await player.locator('.mini-highlight').first().evaluate(el=>{
+     const probe=document.createElement('span');probe.style.color='var(--studio-accent)';document.body.append(probe);
+     const result={actual:getComputedStyle(el).outlineColor,expected:getComputedStyle(probe).color};probe.remove();return result;
+   });
+   assert.equal(highlightTheme.actual,highlightTheme.expected,'highlight follows live Hermes accent');
  };
  await assertTheme(themes.dark,'dark');
+ await testHighlights({page,player,audio,audioFrame:af,screenshot:process.env.POPTART_HIGHLIGHT_SCREENSHOT});
  if(process.env.POPTART_LAYOUT_SCREENSHOT)await page.screenshot({path:process.env.POPTART_LAYOUT_SCREENSHOT});
  const setAppearance=async appearance=>page.evaluate(value=>window.dispatchEvent(new CustomEvent('test:theme',{detail:value})),appearance);
  await setAppearance({theme:{colors:themes.light},renderedMode:'light',resolvedMode:'dark'});

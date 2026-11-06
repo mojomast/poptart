@@ -96,3 +96,10 @@
   .transport{flex-wrap:wrap}.transport iframe{flex-basis:100%;width:100%!important}.tempo{margin-left:auto}
   .is-compact .editor{padding:12px}.code-content textarea{font-size:11px}
 }
+
+/* Inert mini-notation paint layer, metric-identical to the editable textarea. */
+.pattern-editor {position:relative;flex:1;min-width:0;overflow:hidden}
+.code-content .pattern-editor textarea {position:absolute;inset:0;width:100%;height:100%;background:transparent;display:block;margin:0}
+.pattern-highlights {position:absolute;top:0;left:0;margin:0;padding:0 12px 0 0;min-width:100%;width:max-content;pointer-events:none;user-select:none;white-space:pre;color:transparent;font:12px/23px var(--studio-font-mono);tab-size:2}
+.mini-highlight {color:transparent;background:color-mix(in srgb,var(--studio-accent) 35%,transparent);outline:1px solid var(--studio-accent);border-radius:2px}
+@media(max-width:600px) {.pattern-highlights {font-size:11px}}
