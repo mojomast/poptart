@@ -1,0 +1,22 @@
+{
+  "title": "complex demo",
+  "tempo": 126,
+  "code": "// complex demo \u2014 Main \u2014 126 BPM, A minor / Fmaj7 / Cmaj7 / Gadd9\n// Offline: original CC0 bd/sd/hh + built-in oscillators only.\nstack(\n  s(\"bd*4\").gain(0.65),\n  s(\"~ sd ~ sd\").gain(0.3).room(0.12),\n  s(\"hh*8\").gain(\"[0.13 0.065]*4\").swingBy(1/6,8).pan(0.35),\n  s(\"hh\").euclid(5,16).gain(0.05).speed(1.6).pan(0.7),\n  s(\"sd\").euclid(3,16).late(1/16).gain(0.045).lpf(2200),\n  note(\"<a1 f1 c2 g1>\").struct(\"x ~ x [~ x]\").s(\"triangle\").decay(0.2).sustain(0.08).release(0.08).lpf(650).gain(0.27),\n  note(\"<[a3,c4,e4,g4] [f3,a3,c4,e4] [c3,e3,g3,b3] [g3,b3,d4,a4]>\").s(\"sawtooth\").attack(0.12).decay(0.3).sustain(0.35).release(0.65).lpf(950).gain(0.075).room(0.32),\n  note(\"<[a4 c5 e5 g5]*2 [f4 a4 c5 e5]*2 [c4 e4 g4 b4]*2 [g4 b4 d5 a5]*2>\").s(\"sine\").decay(0.09).sustain(0).release(0.12).gain(0.12).lpf(2400).delay(0.2).delaytime(0.2381).delayfeedback(0.25).room(0.18).pan(\"<0.25 0.75>\"),\n  note(\"<~ e5 [g5 e5] c5 ~ a4 [b4 d5] g4>\").s(\"triangle\").decay(0.18).sustain(0).release(0.22).gain(0.12).lpf(1800).delay(0.22).delaytime(0.3571).delayfeedback(0.3).room(0.25)\n)",
+  "sections": [
+    {
+      "id": "intro",
+      "name": "Intro",
+      "code": "// complex demo \u2014 Intro \u2014 126 BPM, A minor / Fmaj7 / Cmaj7 / Gadd9\n// Offline: original CC0 bd/sd/hh + built-in oscillators only.\nstack(\n  note(\"<[a3,c4,e4,g4] [f3,a3,c4,e4] [c3,e3,g3,b3] [g3,b3,d4,a4]>\").s(\"sawtooth\").attack(0.12).decay(0.3).sustain(0.35).release(0.65).lpf(950).gain(0.075).room(0.32),\n  s(\"hh\").euclid(3,8).gain(0.08).swingBy(1/6,8),\n  note(\"<[a4 c5 e5 g5]*2 [f4 a4 c5 e5]*2 [c4 e4 g4 b4]*2 [g4 b4 d5 a5]*2>\").s(\"sine\").decay(0.09).sustain(0).release(0.12).gain(0.12).lpf(2400).delay(0.2).delaytime(0.2381).delayfeedback(0.25).room(0.18).pan(\"<0.25 0.75>\").slow(2),\n  note(\"<a1 f1 c2 g1>\").struct(\"x ~ x [~ x]\").s(\"triangle\").decay(0.2).sustain(0.08).release(0.08).lpf(650).gain(0.27).gain(0.16).lpf(400)\n)"
+    },
+    {
+      "id": "main",
+      "name": "Main",
+      "code": "// complex demo \u2014 Main \u2014 126 BPM, A minor / Fmaj7 / Cmaj7 / Gadd9\n// Offline: original CC0 bd/sd/hh + built-in oscillators only.\nstack(\n  s(\"bd*4\").gain(0.65),\n  s(\"~ sd ~ sd\").gain(0.3).room(0.12),\n  s(\"hh*8\").gain(\"[0.13 0.065]*4\").swingBy(1/6,8).pan(0.35),\n  s(\"hh\").euclid(5,16).gain(0.05).speed(1.6).pan(0.7),\n  s(\"sd\").euclid(3,16).late(1/16).gain(0.045).lpf(2200),\n  note(\"<a1 f1 c2 g1>\").struct(\"x ~ x [~ x]\").s(\"triangle\").decay(0.2).sustain(0.08).release(0.08).lpf(650).gain(0.27),\n  note(\"<[a3,c4,e4,g4] [f3,a3,c4,e4] [c3,e3,g3,b3] [g3,b3,d4,a4]>\").s(\"sawtooth\").attack(0.12).decay(0.3).sustain(0.35).release(0.65).lpf(950).gain(0.075).room(0.32),\n  note(\"<[a4 c5 e5 g5]*2 [f4 a4 c5 e5]*2 [c4 e4 g4 b4]*2 [g4 b4 d5 a5]*2>\").s(\"sine\").decay(0.09).sustain(0).release(0.12).gain(0.12).lpf(2400).delay(0.2).delaytime(0.2381).delayfeedback(0.25).room(0.18).pan(\"<0.25 0.75>\"),\n  note(\"<~ e5 [g5 e5] c5 ~ a4 [b4 d5] g4>\").s(\"triangle\").decay(0.18).sustain(0).release(0.22).gain(0.12).lpf(1800).delay(0.22).delaytime(0.3571).delayfeedback(0.3).room(0.25)\n)"
+    },
+    {
+      "id": "break",
+      "name": "Break",
+      "code": "// complex demo \u2014 Break \u2014 126 BPM, A minor / Fmaj7 / Cmaj7 / Gadd9\n// Offline: original CC0 bd/sd/hh + built-in oscillators only.\nstack(\n  note(\"<[a3,c4,e4,g4] [f3,a3,c4,e4] [c3,e3,g3,b3] [g3,b3,d4,a4]>\").s(\"sawtooth\").attack(0.12).decay(0.3).sustain(0.35).release(0.65).lpf(950).gain(0.075).room(0.32).lpf(600).room(0.48),\n  note(\"<a1 f1 c2 g1>\").struct(\"x ~ x [~ x]\").s(\"triangle\").decay(0.2).sustain(0.08).release(0.08).lpf(650).gain(0.27).struct(\"x ~ ~ ~\").gain(0.16),\n  note(\"<[a4 c5 e5 g5]*2 [f4 a4 c5 e5]*2 [c4 e4 g4 b4]*2 [g4 b4 d5 a5]*2>\").s(\"sine\").decay(0.09).sustain(0).release(0.12).gain(0.12).lpf(2400).delay(0.2).delaytime(0.2381).delayfeedback(0.25).room(0.18).pan(\"<0.25 0.75>\").slow(2).gain(0.09).delay(0.3),\n  s(\"hh\").euclid(3,16).gain(0.045).pan(0.7)\n)"
+    }
+  ]
+}
