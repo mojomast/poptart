@@ -1,0 +1,3 @@
+# Implemented specification
+
+Tracks contain source, BPM, sections, revision and timestamps. The React editor saves via a local service and sends the selected source to a separately sandboxed Strudel audio frame. A human starts and applies changes in that frame. The mock host presents the editor and permits structured service requests. Writes require the current revision; snapshots and code export are available as service operations. See server/README.md for exact requests, ARCHITECTURE.md for boundaries, and TEST_REPORT.md for observed results. Sections do not yet form an automatic arrangement, analysis is static counts, transport is not remotely actuated and Hermes integration is a stub.

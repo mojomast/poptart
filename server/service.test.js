@@ -83,3 +83,14 @@ test('agent workflow writes sections, detects conflict and exports restored revi
     assert.equal((await call('read_track', { trackId: '../private' })).error.code, 'VALIDATION_ERROR');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+test('service rejects opaque and unrelated browser origins', async t => {
+  const app = createApp({ file: await setup(t), origin: 'http://127.0.0.1:5173' });
+  await new Promise(resolve => app.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise(resolve => app.close(resolve)));
+  const url = `http://127.0.0.1:${app.address().port}/api/tool`;
+  for (const origin of ['null', 'https://untrusted.example']) {
+    const response = await fetch(url, { method:'POST', headers:{origin,'content-type':'application/json'}, body:JSON.stringify({operation:'track.list',input:{}}) });
+    assert.equal(response.status,403);
+  }
+});
