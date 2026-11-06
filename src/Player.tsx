@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ToolRequest, ToolResult, Track } from '../shared/contracts';
-import { envelope, valid } from './protocol';
+import { envelope, valid, randomId } from './protocol';
+import './hermes-config';
 
 const starter = 'stack(\n  note("c2 ~ c2 ~").s("triangle").decay(0.2),\n  note("<c3 eb3 g3 bb3>").s("sawtooth").lpf(800),\n  note("c5 eb5 g5 eb5").s("sine").gain(0.3)\n)';
 const frameParams = new URLSearchParams(location.hash.slice(1));
-const capability = frameParams.get('cap') || location.hash.slice(1);
-let hostOrigin = frameParams.get('parent') || '';
+const capability = window.__POPTART_HOST__?.capability || frameParams.get('cap') || location.hash.slice(1);
+const opaqueRelay = Boolean(window.__POPTART_HOST__?.opaqueRelay);
+let hostOrigin = window.__POPTART_HOST__?.parent || frameParams.get('parent') || '';
 if (new URLSearchParams(location.search).has('hermes')) document.documentElement.classList.add('hermes-dark');
 try { if (!hostOrigin) hostOrigin = new URL(document.referrer).origin; } catch { /* no trusted parent */ }
 
@@ -24,9 +26,9 @@ export function Player() {
   const dirtyRef = useRef(dirty); dirtyRef.current = dirty;
   const hasEdits = useRef(dirty); hasEdits.current = dirty;
   const section = useRef(sectionId); section.current = sectionId;
-  const post = useCallback((type: string, payload: unknown, id?: string) => { if (hostOrigin && window.parent !== window) window.parent.postMessage(envelope(type, payload, capability, id), hostOrigin === 'null' ? '*' : hostOrigin); }, []);
+  const post = useCallback((type: string, payload: unknown, id?: string) => { if (hostOrigin && window.parent !== window) window.parent.postMessage(envelope(type, payload, capability, id), opaqueRelay || hostOrigin === 'null' ? '*' : hostOrigin); }, []);
   const request = useCallback((operation: string, input: Record<string, unknown> = {}) => new Promise<ToolResult>(resolve => {
-    const id = crypto.randomUUID();
+    const id = randomId();
     const timer = window.setTimeout(() => { pending.current.delete(id); resolve({ ok: false, error: { code: 'TIMEOUT', message: 'Host did not respond' } }); }, 10000);
     pending.current.set(id, { resolve, timer }); post('tool.request', { operation, input } satisfies ToolRequest, id);
   }), [post]);
@@ -54,7 +56,7 @@ export function Player() {
   }, []);
   useEffect(() => {
     const receive = (event: MessageEvent) => {
-      if (event.source !== window.parent || event.origin !== hostOrigin || !valid(event.data, capability)) return;
+      if (event.source !== window.parent || (event.origin !== hostOrigin && !(opaqueRelay && event.origin === 'null')) || !valid(event.data, capability)) return;
       const m = event.data;
       if (m.type === 'init') { setConnected(true); setExpanded(Boolean((m.payload as { expanded?: boolean })?.expanded)); void refresh(); }
       if (m.type === 'tool.result') { const p = pending.current.get(m.id); if (p) { clearTimeout(p.timer); pending.current.delete(m.id); p.resolve(m.payload as ToolResult); } }
@@ -78,7 +80,7 @@ export function Player() {
     if (response.ok) { setTrack(response.data as Track); setDirty(false); setMessage('Saved'); await refresh(); } else setMessage(response.error.message + (response.error.code === 'CONFLICT' ? ' — reload the track before saving again.' : ''));
   };
   const select = (t: Track) => { if (dirty && !window.confirm('Discard unsaved changes?')) return; setTrack(t); setSectionId(null); setDirty(false); setMessage(''); };
-  const addSection = () => { if (!track) return; const id = crypto.randomUUID(); update({ sections: [...track.sections, { id, name: `Section ${track.sections.length + 1}`, code: track.code }] }); setSectionId(id); };
+  const addSection = () => { if (!track) return; const id = randomId(); update({ sections: [...track.sections, { id, name: `Section ${track.sections.length + 1}`, code: track.code }] }); setSectionId(id); };
   const activeSection = track?.sections.find(s => s.id === sectionId);
   const code = activeSection?.code ?? track?.code ?? '';
   const setCode = (value: string) => { if (!track) return; if (activeSection) update({ sections: track.sections.map(s => s.id === activeSection.id ? { ...s, code: value } : s) }); else update({ code: value }); };
@@ -89,6 +91,6 @@ export function Player() {
       <div className="section-bar"><div className="section-tabs"><button className={!sectionId ? 'selected' : ''} onClick={() => setSectionId(null)}>Main pattern</button>{track.sections.map(s => <button className={sectionId === s.id ? 'selected' : ''} key={s.id} onClick={() => setSectionId(s.id)}>{s.name}</button>)}<button className="add-section" onClick={addSection}>＋ <span>Section</span></button></div><span className="section-label">PATTERN / {activeSection ? activeSection.name.toUpperCase() : 'MAIN'}</span></div>
       {activeSection && <div className="section-edit"><label>SECTION NAME <input value={activeSection.name} onChange={e => update({ sections: track.sections.map(s => s.id === activeSection.id ? { ...s, name: e.target.value } : s) })}/></label><button onClick={() => { update({ sections: track.sections.filter(s => s.id !== activeSection.id) }); setSectionId(null); }}>Remove section ×</button></div>}
       <div className="code-editor"><div className="code-top"><span><i/> PATTERN EDITOR</span><span>STRUDEL / JS</span></div><div className="code-content"><div className="line-numbers" aria-hidden="true">{code.split('\n').map((_, i) => <div key={i}>{String(i + 1).padStart(2, '0')}</div>)}</div><textarea aria-label="Pattern code" spellCheck={false} value={code} onChange={e => setCode(e.target.value)}/></div><div className="code-bottom"><span>✳ &nbsp; MAKE IT YOURS</span><span>{code.split('\n').length} LINES</span></div></div>
-      <div className="transport"><iframe ref={audioFrame} title="Isolated audio controls" src="/audio" sandbox="allow-scripts" onLoad={sendPattern} style={{border:0,width:'100%',height:60}}/><label className="tempo"><span>TEMPO</span><input type="number" min="20" max="400" aria-label="Tempo" value={track.tempo} onChange={e => update({ tempo: Number(e.target.value) })}/><b>BPM</b></label></div>{message && <div className="notice" role="status">{message}</div>}</> : <div className="welcome"><span className="welcome-icon">✳</span><div className="eyebrow">A GOOD PLACE TO START</div><h2>Let's make<br/><em>some noise.</em></h2><p>Every great track starts somewhere. Create a track and start playing with patterns.</p><button className="save-button" disabled={!connected || busy} onClick={create}>＋ &nbsp; Create your first track</button>{message && <div className="notice">{message}</div>}</div>}</main></div>
+      <div className="transport"><iframe ref={audioFrame} title="Isolated audio controls" src={window.__POPTART_GUEST__?.audioHtml ? undefined : "/audio"} srcDoc={window.__POPTART_GUEST__?.audioHtml} sandbox="allow-scripts" onLoad={sendPattern} style={{border:0,width:'100%',height:60}}/><label className="tempo"><span>TEMPO</span><input type="number" min="20" max="400" aria-label="Tempo" value={track.tempo} onChange={e => update({ tempo: Number(e.target.value) })}/><b>BPM</b></label></div>{message && <div className="notice" role="status">{message}</div>}</> : <div className="welcome"><span className="welcome-icon">✳</span><div className="eyebrow">A GOOD PLACE TO START</div><h2>Let's make<br/><em>some noise.</em></h2><p>Every great track starts somewhere. Create a track and start playing with patterns.</p><button className="save-button" disabled={!connected || busy} onClick={create}>＋ &nbsp; Create your first track</button>{message && <div className="notice">{message}</div>}</div>}</main></div>
     <div className="studio-footer"><span>✳ &nbsp; MADE TO BE PLAYED</span><span>THE POSSIBILITIES ARE ENDLESS &nbsp; ↗</span></div></div>;
 }

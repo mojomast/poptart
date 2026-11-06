@@ -32,19 +32,24 @@ function Studio({ctx}) {
     ctx.rest('/bootstrap').then(result => {
       if (closed) return
       if (!result.ok) { setError(result.fix || 'Backend unavailable'); return }
-      const target = new URL(result.studioUrl)
-      if (target.protocol !== 'http:' || target.hostname !== '127.0.0.1' || target.pathname !== '/player') throw Error('Invalid local studio URL')
-      target.searchParams.set('hermes','1')
-      target.hash = new URLSearchParams({cap,parent:location.origin}).toString()
-      setUrl(target.href)
-    }).catch(() => { if (!closed) setError('Python backend unavailable. Enable it only if desired. Local Desktop is required; remote gateways are not supported.') })
+      if (result.transport !== 'hermes-origin-v2' || typeof result.document !== 'string' || result.document.length > 6000000 || !result.document.includes('poptart-guest')) throw Error('Outdated backend: rescan Desktop plugins and retry')
+      // ctx.rest authenticated the bundle request on the Hermes origin. The SDK
+      // renders data HTML through its own same-origin /assets/webapp-guest.html
+      // shell in Webapp; native Desktop renders the opaque data document directly.
+      // SDK Webapp intentionally discards data-URL fragments; bind the guest in
+      // its document instead. This is a frame capability, never a service token.
+      const binding = JSON.stringify({capability:cap,parent:location.origin,opaqueRelay:true}).replace(/</g,'\\u003c')
+      const html = result.document.replace('</head>','<script>window.__POPTART_HOST__='+binding+';</script></head>')
+      setUrl('data:text/html;charset=utf-8,' + encodeURIComponent(html))
+    }).catch(() => { if (!closed) setError('Studio assets unavailable. Rescan plugins and retry; backend transport v2 is required.') })
+    const handshakeTimeout = setTimeout(() => { if (!closed && !ready) setError('Studio did not connect. Check the plugin backend and reload; no direct sidecar connection is used.') },20000)
     // Poll only while this pane is mounted, no overlaps; guest preserves dirty edits.
     const timer = setInterval(() => { if (ready && !closed && outstanding === 0) send('refresh',{}) },3000)
-    return () => { closed = true; clearInterval(timer); window.removeEventListener('message',receive) }
+    return () => { closed = true; clearInterval(timer); clearTimeout(handshakeTimeout); window.removeEventListener('message',receive) }
   },[ctx,generation])
-  return h('div',{style:{height:'100%',background:'var(--ui-bg, #171717)',color:'var(--ui-fg, #eee)'}},
+  return h('div',{style:{height:'100%',colorScheme:'dark',background:'#17171b',color:'var(--ui-fg, #eee)'}},
     h('button',{onClick:()=>{setUrl('');setError('');setGeneration(n=>n+1)}},'Reload studio (stops audio)'),
-    error ? h('p',{role:'alert'},error) : url ? h(SandboxedFrame,{ref:frame,src:url,title:'Poptart Strudel Studio',sandbox:'allow-scripts',style:{width:'100%',height:'calc(100% - 32px)',border:0}}) : h('p',null,'Connecting to local studio…'))
+    error ? h('p',{role:'alert'},error) : url ? h(SandboxedFrame,{ref:frame,src:url,title:'Poptart Strudel Studio',sandbox:'allow-scripts',onError:()=>setError('Studio frame failed to load. Reload after checking the backend.'),style:{width:'100%',height:'calc(100% - 32px)',border:0,background:'#17171b',colorScheme:'dark'}}) : h('p',null,'Loading studio from Hermes…'))
 }
 export default {
   id:'hermes-strudel-studio',name:'Strudel Studio',defaultEnabled:false,

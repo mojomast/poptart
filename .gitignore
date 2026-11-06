@@ -14,3 +14,5 @@ integration/hermes/skills/
 integration/hermes/LICENSE
 integration/hermes/NOTICE
 integration/hermes/THIRD_PARTY_LICENSES.md
+integration/hermes/guest-document.html
+integration/hermes/guest-build.json

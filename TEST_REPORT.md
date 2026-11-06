@@ -1,5 +1,60 @@
 # Test report — 2026-11-06
 
+## Hermes-origin transport fix — v0.2.1 (2026-11-06, EST)
+
+Sequential validation on the recovered box passed: production build, 7/7 Node
+service tests, 9/9 Python plugin/backend tests and the single bounded browser
+regression. Browser sample peak 0.4378300, synth peak 0.0622659 after stopping the
+previous pattern, muted peak 0.00000818, worklets initialized, zero CSP violations
+and zero page errors. All browser HTTP requests used the simulated Hermes origin;
+sidecar connections were blocked. Tool schema remains 127 o200k_base tokens.
+Initial runs were interrupted by shared-box overload; no parallel heavy tests
+were used for the final successful run. These are fixture results, not a claim
+that a real signed-in Webapp session has rendered the post-fix pane yet.
+
+Reported real Webapp results on gateway port 9120 supersede the earlier UI blocker:
+Capabilities exposed independent master/Desktop/Agent switches, Desktop was enabled,
+the pane appeared, and chat created `pane test` track
+`4bf01bec-3512-479c-b9a9-556334e16743` and updated it to revision 2. The old pane
+was blank because its iframe navigated to backend-only `127.0.0.1:46691`, unreachable
+from a browser tunneling only the Hermes port. That was a real transport bug.
+
+The pane now obtains its complete, credential-free guest document through
+`ctx.rest('/bootstrap')` → `/api/plugins/hermes-strudel-studio/bootstrap` on the
+Hermes connection. It supplies a data HTML document to SDK `SandboxedFrame`; on
+Webapp the installed SDK renders this through the same-Hermes-origin
+`/assets/webapp-guest.html` shell. No browser URL points to the sidecar. Editor CSS/JS,
+independently opaque audio srcdoc and original CC0 samples are bundled in the
+authenticated document (~1.04 MB); samples use data URLs and worklets use their
+bundled blob sources. There are no anonymous module/sample requests requiring
+cookies inside an opaque guest. All track operations still use authenticated
+parent `ctx.rest('/tool')`; only the Python backend knows the sidecar address/token.
+
+The installed SDK deliberately strips data-URL fragments. Frame capability and
+parent binding are therefore inserted into the outer guest HTML by the trusted
+host, never into the audio child. Both the SDK shell and player check message
+source; the player accepts the opaque shell relay only with its bound capability.
+Scripts-only sandboxing is retained, without allow-same-origin. Loading/error
+states and the frame background are dark; old loopback bootstrap responses are
+rejected rather than followed.
+
+Hermes v0.22.7 caches hosted ASGI apps by API-file path without mtime invalidation.
+The dashboard manifest now selects `plugin_api_v2.py`, so the existing namespace
+wildcard proxy's normal per-request discovery loads a fresh app under a new key.
+No new gateway route or sidecar restart is needed. This is a versioned plugin
+entrypoint, not a core patch or cache manipulation. Renderer pickup must still be
+checked in the real open pane; do not claim that a file-copy match proves rendering.
+
+Regression coverage now uses the actual installed Webapp guest-shell HTML and CSP
+fixture (b200f5bc60e3), authenticated-parent bootstrap/tool seams, and browser-side
+blocking of every sidecar connection. It checks the shell URL is not the sidecar,
+legacy bootstrap rejection, dark failure state, versioned opaque handshake,
+sample and synth output, invalid-code continuation, mute, hiding, dirty refresh,
+reload and hostile-message rejection. Backend tests verify bootstrap omits
+sidecar URL/token and preserves the same route namespace. Actual real-Webapp
+post-fix playback remains a separate check; physical speakers remain unverified.
+
+
 ## Enablement follow-up — 2026-11-06, 11:55–11:57 EST
 
 Kyle approved enabling `hermes-strudel-studio` and real-pane testing. Before

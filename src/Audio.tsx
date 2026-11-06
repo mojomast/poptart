@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createEngine } from './engine';
+import './hermes-config';
 
 // This child is an independent opaque-origin sandbox. It never receives the
 // host capability or service access. Its messages are informational only.
@@ -9,7 +10,7 @@ export function Audio() {
   const pattern = useRef({code:'', tempo:120});
   const engine = useRef(createEngine());
   useEffect(() => {
-    void engine.current.boot({sampleBanks:[{map:{bd:'bd.wav',sd:'sd.wav',hh:'hh.wav'},baseUrl:new URL('/samples/', location.href).href}]}).catch(e => setStatus(String(e)));
+    void engine.current.boot({sampleBanks:[window.__POPTART_GUEST__?.samples ? {map:window.__POPTART_GUEST__.samples} : {map:{bd:'bd.wav',sd:'sd.wav',hh:'hh.wav'},baseUrl:new URL('/samples/', location.href).href}]}).catch(e => setStatus(String(e)));
     const receive = (e: MessageEvent) => {
       if (e.source !== parent || !e.data || e.data.type !== 'audio.pattern' || typeof e.data.code !== 'string' || e.data.code.length > 100000 || typeof e.data.tempo !== 'number') return;
       pattern.current = {code:e.data.code,tempo:e.data.tempo};

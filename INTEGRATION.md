@@ -1,4 +1,4 @@
-# Hermes integration — 0.2.0
+# Hermes integration — 0.2.1
 
 Verified on moltussy-1 against **Hermes Agent v0.22.7**, source
 `b200f5bc60e31588ba2cb60e288029c4a54ba5fa`, Python 3.14.9, Node 24.13.0.
@@ -60,22 +60,16 @@ sidecar restart; asset rebuilds do not restart it.
 `desktop/plugin.js` uses the installed SDK `SandboxedFrame`, scripts-only opaque
 origin, no same-origin token, no referrer and no permission delegation. It uses
 only SDK/React imports; no core DOM scraping, eval or prototype patching.
-`ctx.rest` reaches the gated Python namespace. `/bootstrap` returns only a local
-asset URL; `/tool` uses the same strict native-operation router. Guest envelopes
+`ctx.rest` reaches the gated Python namespace. `/bootstrap` returns a self-contained credential-free guest document, never a sidecar URL; `/tool` uses the same strict native-operation router. Guest envelopes
 are version 1, source-checked, opaque-origin-checked and bound to a per-mount random
 capability. Request types/size and concurrency are bounded. This capability is
 not the service token. The audio guest never receives it.
 
-SandboxedFrame removes referrers, so the expected parent origin is passed explicitly
-in the editor fragment, alongside the non-service frame capability. Read-only
-production assets have narrowly allowlisted paths and opaque-frame CORS; neither
-credentials nor track files are served. Three-second refresh notifications fetch
+SandboxedFrame removes referrers, and its Webapp implementation discards data-URL fragments. The trusted parent therefore inserts the frame capability and expected parent binding into the editor document before passing it to the SDK. The SDK uses the same-origin `/assets/webapp-guest.html` shell; the audio child is independently opaque srcdoc and receives no capability. The authenticated bundle includes JS/CSS, samples as data URLs and worklets as bundled blob sources. Neither guest requests loopback assets or receives credentials. The versioned `plugin_api_v2.py` entrypoint avoids the installed host's by-path ASGI cache without restarting it. Three-second refresh notifications fetch
 authoritative state without replacing dirty edits. Polling is bounded by pane
 lifetime; no WebSocket is implemented. Reload/unmount destroys playback.
 
-**Local Desktop only:** the loopback asset URL refers to the backend machine.
-Remote gateways, HTTPS-Webapp mixed-content policies, OAuth routing, actual
-Desktop CSP/worklets and non-Chromium browsers remain unverified/unsupported.
+**Remote Webapp transport:** only the Hermes connection is needed; tunneling a sidecar port is neither necessary nor supported by this pane. Audio still requires a secure context (HTTPS or a localhost tunnel). OAuth-specific routing, actual native Desktop data-document worklet support and non-Chromium browsers remain unverified. The regression uses the installed Webapp shell/CSP, not a real signed-in post-fix session.
 The headless SDK-contract harness is not a real Hermes-pane test. Strudel code
 requires a human Play/apply gesture; it is JavaScript, not an OS sandbox.
 

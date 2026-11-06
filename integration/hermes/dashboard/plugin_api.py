@@ -19,8 +19,9 @@ class Request(BaseModel):
 @router.get('/bootstrap')
 def bootstrap():
     try:
-        port, _ = bridge.connection()
-        return {'ok':True,'studioUrl':f'http://127.0.0.1:{port}/player'}
+        bridge.connection()  # server-side only; never expose its URL/token to a guest
+        root = Path(__file__).resolve().parents[1]
+        return {'ok':True, **json.loads((root/'guest-build.json').read_text()), 'document':(root/'guest-document.html').read_text()}
     except Exception:
         return bridge.failure('SERVICE_UNAVAILABLE','Studio unavailable','Build first; inspect private sidecar log. Ask before restarting an existing service.')
 

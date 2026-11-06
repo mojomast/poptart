@@ -1,7 +1,7 @@
 manifest_version: 2
 api_version: 1
 name: hermes-strudel-studio
-version: "0.2.0"
+version: "0.2.1"
 description: "Local Strudel studio. Lazily starts a loopback Node sidecar; saves tracks in profile plugin-data. Evaluated music runs only after user Play/apply in isolated frames, not an OS sandbox."
 author: Hermes Strudel Studio contributors
 license: AGPL-3.0-or-later

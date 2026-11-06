@@ -57,7 +57,9 @@ spec=importlib.util.spec_from_file_location('poptart_api_validation',root/'dashb
 api=importlib.util.module_from_spec(spec);spec.loader.exec_module(api)
 app=FastAPI();app.include_router(api.router)
 with TestClient(app) as client:
-    assert client.get('/bootstrap').json()['studioUrl'].endswith('/player')
+    bootstrap=client.get('/bootstrap').json()
+    assert bootstrap['transport']=='hermes-origin-v2' and 'studioUrl' not in bootstrap
+    assert 'poptart-guest' in bootstrap['document']
     assert client.post('/tool',json={'op':'get','input':{'trackId':tid}}).json()['ok']
     assert client.post('/tool',json={'op':'list','input':{},'extra':True}).status_code==422
 print(json.dumps({'backendRouter':True,'nativeRegistration':True,'hermesDispatch':True,'operations':11,'conflict':True,'strictValidation':True,'unauthenticatedStatus':401,'tokenMode':'0600','trackId':tid,'dataDir':str(directory),'service':state}))
