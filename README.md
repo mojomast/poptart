@@ -12,9 +12,9 @@
 
 <br>
 
-<img src="docs/assets/studio-playing.png" alt="The Strudel Studio pane in Hermes playing a multi-section track, with the track library on the right" width="640">
+<img src="docs/assets/hermes-webapp.png" alt="Hermes webapp with a chat using poptart_studio on the left and the docked Strudel Studio pane playing a track on the right" width="100%">
 
-<sub>The Strudel Studio pane inside Hermes, playing a 126 BPM, three-section track.</sub>
+<sub>Strudel Studio docked in the Hermes webapp. The agent edits the track with <code>poptart_studio</code> while the pane plays it.</sub>
 
 </div>
 
@@ -23,6 +23,11 @@
 ## Why poptart
 
 Strudel is a fantastic way to make music in code. poptart turns it into a **workspace**: tracks that persist, revisions that guard against overwrites, sections you can switch between, and a clean agent API. Your Hermes agent can draft a beat, add a break or change the tempo. You stay in control, because nothing plays until *you* press Play.
+
+<div align="center">
+<img src="docs/assets/studio-playing.png" alt="Close-up of the Strudel Studio pane playing a multi-section track, library on the right" width="560"><br>
+<sub>Close-up: a 126 BPM, three-section track playing, with the library on the right.</sub>
+</div>
 
 ## Features
 
