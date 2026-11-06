@@ -102,6 +102,7 @@ def connection():
 
 def invoke(args, **kwargs):
     try:
+        if len(json.dumps(args,allow_nan=False).encode('utf8')) > 1024*1024: raise ValueError('Request too large')
         from jsonschema import Draft202012Validator
         Draft202012Validator(SCHEMA['parameters']).validate(args)
         Draft202012Validator(INPUTS[args['op']]).validate(args['input'])

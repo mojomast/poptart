@@ -1,5 +1,42 @@
 # Handoff to the Hermes-equipped agent
 
+## Current integration update — 2026-11-06 (America/Toronto, EST)
+
+The original scaffold below is historical. Version 0.2.0 now implements an
+authenticated per-install backend, one strict composable `poptart_studio` tool,
+lazy loopback Node startup, production-asset packaging, a gated API router and
+an opt-in SDK SandboxedFrame Desktop bridge. See INTEGRATION.md and TEST_REPORT.md.
+Verified live Hermes: v0.22.7 / b200f5bc60e31588ba2cb60e288029c4a54ba5fa.
+
+Host checkout: `/home/clanker01/poptart`; linked plugin:
+`/home/clanker01/.hermes/plugins/hermes-strudel-studio` → checkout `integration/hermes`.
+Prechange backup: `/home/clanker01/.hermes/backups/poptart-20261106-114536`
+(11:45:36 EST; records all three new paths as previously absent).
+Data: `~/.hermes/plugin-data/hermes-strudel-studio`; service initially started
+once as PID 2560116, loopback port 46691. Token is private mode 0600, never printed.
+Two native validation tracks remain; no user tracks were removed.
+No new unit, service restart, theme/preference change, existing-plugin enablement,
+merge, tag, release or catalog change occurred. The new plugin remains not enabled
+in persistent Hermes configuration; its Desktop copy was discovered automatically.
+Actual enabled-pane validation is pending user activation. Installed source supports
+hot API mounting and Desktop Rescan/hot reload, so no specific restart is proven
+necessary. Ask before **any** restart; do not preemptively restart either Hermes unit.
+
+### Mandatory validation status
+
+| Mandatory item | Evidence / remaining gap |
+|---|---|
+| Install, doctor, package | Built directory linked on real host; doctor 1 tool / 0 hooks; validate --install-deps passed. Desktop copy exists. Catalog submission untouched. Independent enabled UI/backend switches not exercised. |
+| Real Hermes pane, opaque handshake | Production bundle + actual plugin.js bridge passes a Chromium SDK-contract harness with opaque scripts-only and no-referrer. **Not a real Hermes pane**; pending opt-in activation and GUI test. |
+| Sample/synth audio, worklets, speakers, gain/stop/mute | Sample graph output, muted zero gain, hide-survival, detached-on-reload and invalid-code continuation measured in harness; synth and real host CSP/permissions not verified. Physical speakers and quality cannot be verified by us. |
+| Real Hermes tool, live edits/conflicts | All 11 ops exercised using installed native loader/context/registry dispatch; revision conflict and restore passed. Live-playing Hermes pane edit/apply not exercised. |
+| Invalid code, dirty edits, reload, lifecycle/concurrency | Invalid evaluation preserves measured output; dirty poll refresh preserved editor text; reload reconnected; service concurrent-write test passed. Actual Hermes hide/unmount and process restart remain unverified. No process restart attempted without approval. |
+| Remote/auth/disconnection/hostile messages | Host unauthenticated API gets 401; wrong/opaque origin gets 403; wrong-version/capability and nested-guest host requests ignored in harness. Three-second pane polling implemented; no WebSocket. Remote gateways explicitly unsupported/unverified. |
+| Licenses / sample provenance | NOTICE, source link, AGPL/GPL declarations, lockfile metadata and original CC0 sample provenance reviewed/copied into built package. Exhaustive transitive notice/license/legal clearance remains incomplete. |
+
+## Original foundation handoff (historical)
+
+
 ## Repository
 
 Public repository: https://github.com/mojomast/poptart. Branch: `feat/hermes-strudel-studio`. The tested implementation baseline is `665f776c17cd69246e2918f449aeb2a189f8d698`; get the exact checkout commit with `git rev-parse HEAD` (a commit cannot contain its own hash without changing it). Read DEVPLAN.md, TEST_REPORT.md, RESEARCH.md, ARCHITECTURE.md, INTEGRATION.md and server/README.md before changes.

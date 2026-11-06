@@ -29,7 +29,7 @@ class PluginTests(unittest.TestCase):
         self.assertEqual(NewCtx().tools,[])
 
     def test_strict_validation_before_network(self):
-        invalid = [None,{}, {'op':'delete','input':{}},{'op':'list','input':{'extra':1}},
+        invalid = [None,{}, {'op':'create','input':{'title':'x','code':'silence','tempo':float('nan'),'sections':[]}}, {'op':'delete','input':{}},{'op':'list','input':{'extra':1}},
                    {'op':'get','input':{'trackId':'../bad'}}, {'op':'snapshot','input':{'trackId':'abc','expectedRevision':True}},
                    {'op':'update','input':{'trackId':'abc','expectedRevision':1,'changes':{}}},
                    {'op':'create','input':{'title':'x','code':'silence','tempo':120,'sections':[{'id':'a','name':'a','code':'','extra':1}]}},
@@ -46,6 +46,14 @@ class PluginTests(unittest.TestCase):
             analyze={'trackId':'a'},export={'trackId':'a'},sections={'trackId':'a'},update_section={'trackId':'a','expectedRevision':1,'sectionId':'b','section':{'name':'a','code':'x'}})
         for op,inp in cases.items(): Draft202012Validator(bridge.INPUTS[op]).validate(inp)
         self.assertEqual(set(cases),set(bridge.OPS))
+
+    def test_existing_service_is_never_auto_restarted(self):
+        with tempfile.TemporaryDirectory() as d, patch.object(bridge,'data_dir',return_value=Path(d)):
+            (Path(d)/'service.json').write_text('{"port":12345}')
+            with patch.object(bridge,'_request',side_effect=ConnectionError), patch.object(bridge.subprocess,'Popen') as spawn:
+                result=json.loads(bridge.invoke({'op':'list','input':{}}))
+                self.assertEqual(result['code'],'SERVICE_UNAVAILABLE')
+                spawn.assert_not_called()
 
     def test_real_sidecar_workflow(self):
         with tempfile.TemporaryDirectory() as d, patch.object(bridge,'data_dir',return_value=Path(d)):

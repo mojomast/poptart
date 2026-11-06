@@ -46,6 +46,13 @@ try {
  const af=page.frames().find(f=>f.url().includes('/audio'));
  const measure=async()=>af.evaluate(async()=>{const a=window.__studioAnalyser;if(!a)return -1;let peak=0;for(let i=0;i<30;i++){const d=new Float32Array(a.fftSize);a.getFloatTimeDomainData(d);peak=Math.max(peak,...d.map(Math.abs));await new Promise(r=>setTimeout(r,50))}return peak});
  const peak=await measure();assert.ok(peak>0.00001,`nonzero sample output required: ${peak}`);
+ // Neither the nested execution frame nor malformed editor envelopes get a host capability.
+ const beforeHostile=(await tool('list',{})).data.length;
+ const pf=page.frames().find(f=>f.url().includes('/player'));
+ await pf.evaluate(()=>{const cap=new URLSearchParams(location.hash.slice(1)).get('cap');for(const [version,capability] of [[2,cap],[1,'wrong']])parent.postMessage({version,capability,id:'forged',type:'tool.request',payload:{operation:'track.create',input:{title:'forged',code:'silence',tempo:120,sections:[]}}},'*')});
+ await af.evaluate(()=>parent.parent.postMessage({version:1,id:'nested',type:'tool.request',payload:{operation:'track.create',input:{}}},'*'));
+ await page.waitForTimeout(150);
+ assert.equal((await tool('list',{})).data.length,beforeHostile);
  const denied=await af.evaluate(async url=>{try{return (await fetch(url+'/api/tool',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})).status}catch{return 'blocked'}},base);
  assert.ok(denied==='blocked'||denied===403);
  await code.fill('this is not valid $$$');
@@ -54,7 +61,12 @@ try {
  const afterInvalid=await measure();assert.ok(afterInvalid>0.00001);
  await audio.getByRole('button',{name:'Mute',exact:true}).click();
  await audio.getByRole('button',{name:'Unmute',exact:true}).waitFor();
+ await page.waitForTimeout(100);
+ const mutedPeak=await measure();assert.ok(mutedPeak<0.00001,`muted output should be zero: ${mutedPeak}`);
  await audio.getByRole('button',{name:'Unmute',exact:true}).click();
+ await page.locator('iframe').first().evaluate(el=>el.style.display='none');
+ const hiddenPeak=await measure();assert.ok(hiddenPeak>0.00001);
+ await page.locator('iframe').first().evaluate(el=>el.style.display='');
  // Dirty edits must survive poll notifications.
  const list=await tool('list',{});const track=list.data[0];
  await tool('update',{trackId:track.id,expectedRevision:track.revision,changes:{title:'external edit'}});
@@ -62,6 +74,7 @@ try {
  assert.equal(await code.inputValue(),'this is not valid $$$');
  await page.getByRole('button',{name:'Reload studio (stops audio)'}).click();
  await player.getByText('SESSION READY').waitFor();
- console.log(JSON.stringify({productionAssets:true,samplePeak:peak,afterInvalidPeak:afterInvalid,opaqueNoReferrerHandshake:true,userGestureSamplePlayback:true,invalidEditError:true,dirtyPollPreserved:true,reloadReconnected:true,opaqueApiDenied:denied,pageErrors:issues}));
+ assert.ok(af.isDetached(),'Reload must destroy old audio realm');
+ console.log(JSON.stringify({productionAssets:true,samplePeak:peak,mutedPeak,hiddenPeak,afterInvalidPeak:afterInvalid,opaqueNoReferrerHandshake:true,userGestureSamplePlayback:true,invalidEditError:true,dirtyPollPreserved:true,reloadReconnected:true,opaqueApiDenied:denied,hostileMessagesIgnored:true,pageErrors:issues}));
  assert.deepEqual(issues,[]);
 } finally {await browser?.close();await new Promise(r=>host.close(r));await new Promise(r=>service.close(r));await rm(temp,{recursive:true,force:true})}
