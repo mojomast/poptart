@@ -55,6 +55,31 @@ sidecar URL/token and preserves the same route namespace. Actual real-Webapp
 post-fix playback remains a separate check; physical speakers remain unverified.
 
 
+## Origin-fix host deployment — 2026-11-06, 14:08–14:10 EST
+
+- Host checkout fast-forwarded to `c4c48106f898fc8e01544a0ae1da1f607937ac47`
+  and rebuilt successfully. The served Desktop copy matches the source SHA256.
+- Backup: `/home/clanker01/.hermes/backups/poptart-origin-20261106-140754/`
+  contains the previous source git bundle, rollback SHA, built plugin and served
+  Desktop copy. No enablement or theme config was changed.
+- Installed Hermes reports v0.22.7 / source `b200f5bc60e3`. Doctor passed with one
+  registered tool; validate passed, with an invisible-Unicode caution in the
+  bundled Strudel vendor chunk (not a validation failure).
+- Fresh installed-runtime FastAPI TestClient returned the 1,034,506-byte v2
+  bootstrap document without the sidecar URL, then successfully performed a
+  read-only list through the authenticated sidecar. This proves the backend
+  against the existing process, not the running gateway's cache or real pane.
+- Dashboard PID 2140675, gateway PID 2140943 and sidecar PID 2560116 remained
+  unchanged. No service was restarted. Existing user/validation tracks untouched.
+- Hot renderer pickup remains unconfirmed: the new entrypoint had not been
+  imported before the manual runtime check. Use supported Desktop Rescan/reload
+  in the signed-in Webapp and confirm `/assets/webapp-guest.html` on its origin.
+  No gateway/dashboard restart has been identified as required; obtain approval
+  first if real-session testing reveals otherwise.
+- Rollback, only if requested: restore the saved built plugin and served Desktop
+  copy from this backup and use its `rollback-sha.txt` / git bundle to recover the
+  previous source. Do not restore unrelated config or restart services implicitly.
+
 ## Enablement follow-up — 2026-11-06, 11:55–11:57 EST
 
 Kyle approved enabling `hermes-strudel-studio` and real-pane testing. Before
