@@ -17,6 +17,10 @@ export function createApp({ file = resolve('data', 'tracks.json'), origin } = {}
       res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
       res.end(JSON.stringify(value));
     };
+    // Browser requests from an opaque player or unrelated site must never reach tools.
+    // Non-browser clients are trusted local processes; do not expose this service remotely.
+    const allowedOrigin = origin || 'http://127.0.0.1:5173';
+    if (req.headers.origin && req.headers.origin !== allowedOrigin) return reply(403, { ok: false, error: { code: 'FORBIDDEN', message: 'Origin is not authorized' } });
     if (req.url !== '/api/tool') return reply(404, { ok: false, error: { code: 'NOT_FOUND', message: 'Not found' } });
     if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
     if (req.method !== 'POST') return reply(405, { ok: false, error: { code: 'METHOD_NOT_ALLOWED', message: 'Use POST' } });
@@ -36,6 +40,6 @@ export function createApp({ file = resolve('data', 'tracks.json'), origin } = {}
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  const port = Number(process.env.PORT || 3001);
+  const port = Number(process.env.PORT || 4311);
   createApp({ file: resolve(process.env.POPTART_DATA_FILE || 'data/tracks.json'), origin: process.env.POPTART_UI_ORIGIN }).listen(port, '127.0.0.1', () => console.log(`Poptart service listening on http://127.0.0.1:${port}`));
 }

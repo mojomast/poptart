@@ -1,0 +1,14 @@
+<!doctype html><meta charset="utf-8"><button id="start">Start audio experiment</button><pre id="status">waiting for gesture</pre>
+<script>
+const log=(x)=>{document.querySelector('#status').textContent+=`\n${x}`;parent.postMessage({type:'experiment',detail:x},'*')};
+log('ready: secureContext='+isSecureContext);
+document.querySelector('#start').onclick=async()=>{
+ try {
+  const ctx=new AudioContext(); await ctx.resume(); log('audio context: '+ctx.state);
+  const source=ctx.createOscillator(), analyser=ctx.createAnalyser(), gain=ctx.createGain(); gain.gain.value=0.05; source.connect(analyser).connect(gain).connect(ctx.destination); source.start();
+  await new Promise(r=>setTimeout(r,200)); const data=new Float32Array(analyser.fftSize); analyser.getFloatTimeDomainData(data); log('oscillator peak: '+Math.max(...data.map(Math.abs)));
+  try {const blob=new Blob([`class TestProcessor extends AudioWorkletProcessor { process(){return true} } registerProcessor('test',TestProcessor)`],{type:'application/javascript'}); const url=URL.createObjectURL(blob); await ctx.audioWorklet.addModule(url); new AudioWorkletNode(ctx,'test'); URL.revokeObjectURL(url); log('AudioWorklet: loaded');}catch(e){log('AudioWorklet: '+e.name+': '+e.message)}
+  try {const b=ctx.createBuffer(1,2400,ctx.sampleRate); for(let i=0;i<b.length;i++) b.getChannelData(0)[i]=Math.sin(i/10)*0.1; const s=ctx.createBufferSource();s.buffer=b;s.connect(ctx.destination);s.start();log('synthetic AudioBuffer source: started (not a Strudel sample)')}catch(e){log('sample: '+e.message)}
+ }catch(e){log('audio error: '+e.name+': '+e.message)}
+};
+</script>

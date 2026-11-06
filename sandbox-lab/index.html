@@ -1,0 +1,8 @@
+<!doctype html><meta charset="utf-8"><title>Opaque frame audio experiment</title>
+<h1>Opaque frame audio experiment</h1><p>Click Start inside the frame. Results are reported below; this tests browser primitives, not Strudel itself.</p>
+<button id="reload">Reload frame</button><pre id="events"></pre><iframe title="Opaque audio experiment" sandbox="allow-scripts" src="frame.html"></iframe>
+<script>
+const frame=document.querySelector('iframe'), out=document.querySelector('#events');
+addEventListener('message',e=>{if(e.source!==frame.contentWindow)return; out.textContent+=JSON.stringify({origin:e.origin,data:e.data})+'\n'});
+document.querySelector('#reload').onclick=()=>{frame.src='frame.html?reload='+Date.now()};
+</script>
