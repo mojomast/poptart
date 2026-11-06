@@ -8,7 +8,7 @@
     "dev:host": "vite",
     "service": "node server/index.js",
     "test": "node --test server/service.test.js",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && node scripts/package-plugin.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "test:browser": "node tests/browser.mjs"
   },

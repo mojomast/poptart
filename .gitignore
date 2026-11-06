@@ -5,3 +5,12 @@ dist/
 .env
 data/
 server/data/
+
+__pycache__/
+.pytest_cache/
+integration/hermes/assets/
+integration/hermes/service/
+integration/hermes/skills/
+integration/hermes/LICENSE
+integration/hermes/NOTICE
+integration/hermes/THIRD_PARTY_LICENSES.md

@@ -1,11 +1,4 @@
-"""Hermes adapter scaffold. Intentionally registers no tools until a trusted service bridge is configured.
-
-See INTEGRATION.md. Never connect a Hermes tool to an unauthenticated HTTP endpoint.
-"""
-import logging
-
-
+"""Poptart native Hermes plugin."""
 def register(ctx):
-    logging.getLogger(__name__).warning(
-        "Strudel Studio Hermes adapter is a scaffold: no tools registered; see INTEGRATION.md"
-    )
+    from .bridge import register as register_tools
+    register_tools(ctx)
