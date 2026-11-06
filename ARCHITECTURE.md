@@ -1,0 +1,5 @@
+# Architecture and integration contract
+
+Phase 0 contract: `shared/contracts.ts` defines the shared JSON model. The service owns persisted tracks, monotonic revisions and optimistic concurrency; the browser owns ephemeral playback state and audio. No browser code receives filesystem access. Interfaces between independently developed modules are HTTP JSON `/api/tool` (`ToolRequest` -> `ToolResult`) and version-1 iframe envelopes. The host mediates service requests; the player never treats an opaque origin or `*` target as authorization. A per-frame capability, source-window validation and handshake are required. Player is sandboxed without `allow-same-origin`. Strudel executes arbitrary JavaScript: static checks are insufficient and this boundary is not a secure container for hostile code without additional isolation.
+
+Ownership: service (`server/`), audio (`src/engine/`), UI and mock host (`src/` excluding engine); integration and docs are orchestrator-owned. All persistence writes must be revision-checked and atomic; transport is a request to the browser, not proof of audio playback.
