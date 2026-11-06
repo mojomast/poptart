@@ -33,6 +33,33 @@ The change is frontend-only: existing v2 bootstrap reads generated documents on
 each request, so pane reload should obtain the new build without a gateway restart.
 Real signed-in v0.2.2 retest remains pending.
 
+### v0.2.2 deployment evidence — 2026-11-06, 14:33–14:35 EST
+
+- Fix commit: `a54c02f1290d973ac9b4c558434f2dc32cc89d76`.
+- Missing-quote, runtime missing-method, and `setcps(0)` then runtime-error cases
+  each retained Playing plus a separate alert; both delayed audio windows in all
+  three cases peaked at 0.4377862513. Synth peak 0.0622680448; muted peak 0;
+  worklets loaded, zero CSP violations and page errors. Standalone syntax-error
+  continuation also peaked at 0.4377862513. All test tracks were disposable.
+- Host backup: `/home/clanker01/.hermes/backups/poptart-playback-20261106-143354/`.
+  It contains rollback SHA `f8ff909dc52b8b9ff7876c42935a5cc61f3e74c0`, the source
+  git bundle, prior built integration tree, prior served Desktop copy and PID
+  records. No user config, theme, enablement or track data was modified.
+- Host fast-forward and production rebuild succeeded. Doctor registered one tool;
+  validate passed with the existing invisible-Unicode caution in a vendor chunk.
+- Crucially, a read-only request to the RUNNING gateway on port 9120, using its
+  documented one-use native HTTP grant, returned the fresh v2 document: HTTP 200,
+  1,035,125 bytes, SHA256
+  `e689200368029154213426d5bb51b5f0c46ee3bc9844892e9895201cb035e60c`.
+  This matches the host's rebuilt file and contains the new error/rollback code.
+  No credentials were read from storage, printed or persisted for this probe.
+- Gateway PID 2689794, dashboard PID 2140675 and sidecar PID 2560116 stayed
+  unchanged during deployment. This frontend-only update needs pane reload, not
+  another gateway restart. Real signed-in v0.2.2 behavior still needs retesting.
+- Rollback if requested: recover the recorded source with the saved git bundle
+  and restore the prior built integration/Desktop artifacts from this backup,
+  then reload the pane. Do not restart services or restore unrelated config.
+
 ## Hermes-origin transport fix — v0.2.1 (2026-11-06, EST)
 
 Sequential validation on the recovered box passed: production build, 7/7 Node
