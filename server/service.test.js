@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { createStore } from './store.js';
 import { createApp } from './index.js';
 
+const token = 'test-only-'.padEnd(64, 'x');
 const fields = { title: 'First', code: 'sound("bd")', tempo: 120, sections: [{ id: 'intro', name: 'Intro', code: 'silence' }] };
 async function setup(t) {
   const dir = await mkdtemp(join(tmpdir(), 'poptart-test-'));
@@ -48,14 +49,14 @@ test('validation rejects malformed inputs without changing data', async t => {
 });
 
 test('HTTP endpoint accepts ToolRequest and handles invalid JSON and CORS', async t => {
-  const server = createApp({ file: await setup(t), origin: 'http://localhost:5173' });
+  const server = createApp({ token, file: await setup(t), origin: 'http://localhost:5173' });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   t.after(() => new Promise(resolve => server.close(resolve)));
   const url = `http://127.0.0.1:${server.address().port}/api/tool`;
-  const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: 'http://localhost:5173' }, body: JSON.stringify({ operation: 'track.create', input: fields }) });
+  const response = await fetch(url, { method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json', Origin: 'http://localhost:5173' }, body: JSON.stringify({ operation: 'track.create', input: fields }) });
   assert.equal(response.headers.get('access-control-allow-origin'), 'http://localhost:5173');
   assert.equal((await response.json()).data.title, 'First');
-  const invalid = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{' });
+  const invalid = await fetch(url, { method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: '{' });
   assert.equal(invalid.status, 400);
   assert.equal((await invalid.json()).error.code, 'INVALID_JSON');
 });
@@ -85,7 +86,7 @@ test('agent workflow writes sections, detects conflict and exports restored revi
 });
 
 test('service rejects opaque and unrelated browser origins', async t => {
-  const app = createApp({ file: await setup(t), origin: 'http://127.0.0.1:5173' });
+  const app = createApp({ token, file: await setup(t), origin: 'http://127.0.0.1:5173' });
   await new Promise(resolve => app.listen(0, '127.0.0.1', resolve));
   t.after(() => new Promise(resolve => app.close(resolve)));
   const url = `http://127.0.0.1:${app.address().port}/api/tool`;
@@ -94,3 +95,24 @@ test('service rejects opaque and unrelated browser origins', async t => {
     assert.equal(response.status,403);
   }
 });
+
+ test('API refuses absent/wrong credentials even from allowed origin', async t => {
+  const app = createApp({token, file:await setup(t)});
+  await new Promise(r => app.listen(0,'127.0.0.1',r));
+  t.after(() => new Promise(r => app.close(r)));
+  const url = `http://127.0.0.1:${app.address().port}/api/tool`;
+  for (const authorization of ['', 'Bearer wrong']) {
+    const response = await fetch(url,{method:'POST',headers:{authorization,origin:'http://127.0.0.1:5173','content-type':'application/json'},body:JSON.stringify({operation:'track.list',input:{}})});
+    assert.equal(response.status,401);
+  }
+  assert.throws(() => createApp(), /token/);
+ });
+ test('token generation is private and rejects permissive files', async t => {
+   const {loadToken} = await import('./token.js');
+   const {stat, chmod} = await import('node:fs/promises');
+   const path = (await setup(t)) + '.token';
+   const first = await loadToken(path);
+   assert.equal(first.length,64); assert.equal(await loadToken(path),first);
+   assert.equal((await stat(path)).mode & 0o777,0o600);
+   await chmod(path,0o644); await assert.rejects(loadToken(path),/0600/);
+ });
