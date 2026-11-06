@@ -71,10 +71,25 @@ try {
  assert.equal((await tool('list',{})).data.length,beforeHostile);
  const denied=await af.evaluate(async url=>{try{return (await fetch(url+'/test/tool',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})).status}catch{return 'blocked'}},`http://127.0.0.1:${host.address().port}`);
  assert.ok(denied==='blocked'||denied===403);
- await code.fill('this is not valid $$$');
- await audio.getByRole('button',{name:'Play',exact:true}).click();
- await audio.getByRole('status').getByText(/Error:/).waitFor();
- const afterInvalid=await measure();assert.ok(afterInvalid>0.00001);
+ // Exercise the packaged hermes-player/hermes-audio documents, not a mock engine.
+ // Wait past existing sample/FFT tails and measure two later windows: the old
+ // immediate peak check could pass using buffered audio after scheduling stopped.
+ const rejectEdit=async (invalid,expected) => {
+   await code.fill(invalid);
+   await audio.getByRole('button',{name:'Play',exact:true}).click();
+   await audio.getByText(expected).waitFor();
+   await page.waitForTimeout(3000);
+   const windows=[await measure(),await measure()];
+   console.log('INVALID_EDIT_AUDIO',JSON.stringify({invalid,windows,status:await audio.getByRole('status').innerText()}));
+   assert.ok(windows.every(value=>value>0.001),`ongoing scheduling required after failed edit: ${windows}`);
+   await audio.getByRole('status').getByText('Playing',{exact:true}).waitFor({timeout:1000});
+   await audio.getByRole('alert').getByText(expected).waitFor();
+   return windows;
+ };
+ const syntaxPeaks=await rejectEdit('s("bd*4)',/Unterminated string/);
+ const runtimePeaks=await rejectEdit('s("bd*4").poptartMissingMethod()',/poptartMissingMethod/);
+ const runtimeTempoPeaks=await rejectEdit('setcps(0); s("bd*4").poptartMissingMethod()',/poptartMissingMethod/);
+ const afterInvalid=Math.min(...syntaxPeaks,...runtimePeaks,...runtimeTempoPeaks);
  await audio.getByRole('button',{name:'Mute',exact:true}).click();
  await audio.getByRole('button',{name:'Unmute',exact:true}).waitFor();
  await page.waitForTimeout(100);
@@ -110,6 +125,6 @@ try {
  assert.equal(await page.getByRole('alert').evaluate(el=>getComputedStyle(el.parentElement).colorScheme),'dark');
  assert.ok(browserRequests.every(url=>new URL(url).origin===`http://127.0.0.1:${host.address().port}`),'all browser HTTP requests must use the Hermes host origin');
  assert.ok(!browserRequests.some(url=>url.startsWith(base)), 'browser must never request the sidecar');
- console.log(JSON.stringify({hermesOriginDocument:true,sidecarUnreachableFromBrowser:true,staleLoopbackBootstrapRejected:true,darkFailureState:true,workletsLoaded,cspViolations,synthPeak,productionAssets:true,samplePeak:peak,mutedPeak,hiddenPeak,afterInvalidPeak:afterInvalid,opaqueNoReferrerHandshake:true,userGestureSamplePlayback:true,invalidEditError:true,dirtyPollPreserved:true,reloadReconnected:true,opaqueApiDenied:denied,hostileMessagesIgnored:true,pageErrors:issues}));
+ console.log(JSON.stringify({hermesOriginDocument:true,sidecarUnreachableFromBrowser:true,staleLoopbackBootstrapRejected:true,darkFailureState:true,workletsLoaded,cspViolations,syntaxPeaks,runtimePeaks,runtimeTempoPeaks,synthPeak,productionAssets:true,samplePeak:peak,mutedPeak,hiddenPeak,afterInvalidPeak:afterInvalid,opaqueNoReferrerHandshake:true,userGestureSamplePlayback:true,invalidEditError:true,dirtyPollPreserved:true,reloadReconnected:true,opaqueApiDenied:denied,hostileMessagesIgnored:true,pageErrors:issues}));
  assert.deepEqual(issues,[]);
 } finally {await browser?.close();await new Promise(r=>host.close(r));await new Promise(r=>service.close(r));await rm(temp,{recursive:true,force:true})}

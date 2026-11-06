@@ -81,6 +81,7 @@ class StrudelEngine {
       (error: unknown) => error,
     );
     const task = async () => {
+      let previous: { pattern: unknown; cps: number } | null = null;
       try {
         await this.boot();
         if (token !== this.generation) return;
@@ -99,6 +100,12 @@ class StrudelEngine {
         if (token !== this.generation) return;
         if (!code.trim()) throw new Error('No code to evaluate');
         if (bpm !== undefined && (!Number.isFinite(bpm) || bpm <= 0)) throw new Error('Tempo must be a positive finite number');
+        // Parse before entering the stateful REPL: an unterminated string must
+        // never reset live REPL definitions/transforms or touch the scheduler.
+        mod.transpiler(code);
+        if (this.state.playing && this.repl!.state.pattern) {
+          previous = { pattern: this.repl!.state.pattern, cps: this.repl!.scheduler.cps };
+        }
         await this.repl!.evaluate(code, true);
         const error = this.repl!.state.evalError;
         if (error) throw error;
@@ -106,7 +113,19 @@ class StrudelEngine {
         if (bpm !== undefined) this.repl!.setCps(bpm / 240);
         this.update({ playing: this.repl!.state.started, lastGoodCode: code, error: null });
       } catch (error) {
-        if (token === this.generation) this.update({ error: message(error) });
+        if (token === this.generation) {
+          let recoveryError = '';
+          if (previous) {
+            try {
+              // Restore the evaluated Pattern object, not its source: do not
+              // re-run arbitrary user code or replay its side effects on failure.
+              await this.repl!.setPattern(previous.pattern, true);
+              this.repl!.setCps(previous.cps);
+              if (token !== this.generation) { this.repl!.stop(); return; }
+            } catch (failure) { recoveryError = `; playback recovery failed: ${message(failure)}`; }
+          }
+          if (token === this.generation) this.update({ playing: this.repl?.state.started ?? false, error: message(error) + recoveryError });
+        }
         throw error;
       }
     };

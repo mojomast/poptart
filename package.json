@@ -11,7 +11,8 @@
     "build": "tsc --noEmit && vite build && node scripts/package-plugin.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "test:browser": "node tests/browser.mjs",
-    "test:desktop": "node tests/desktop-browser.mjs"
+    "test:desktop": "node tests/desktop-browser.mjs",
+    "test:standalone": "node tests/standalone-browser.mjs"
   },
   "dependencies": {
     "@strudel/core": "1.2.6",

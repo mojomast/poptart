@@ -1,5 +1,38 @@
 # Test report — 2026-11-06
 
+## Invalid-edit continuation — v0.2.2 (2026-11-06, EST)
+
+Reported real Hermes Webapp retest after Kyle-approved gateway restart now passes
+render, play/mute/stop, tool-driven revision 4 / Break-section synchronization and
+reload persistence. The earlier claim that v0.2.1 necessarily hot-replaced an
+already-mounted router was incorrect: that restart was required. No restart is
+being performed by this fix.
+
+The shared Audio component unconditionally replaced its transport label with
+`Error` on any rejected apply. It now subscribes to actual engine state, keeps
+`Playing` visible, and shows a separate error alert. Syntax is parsed before the
+stateful Strudel REPL. Runtime eval failures restore the previous evaluated Pattern
+object and tempo rather than re-running its source. This is not a rollback of
+arbitrary JavaScript/global/audio-graph side effects.
+
+A strengthened pre-fix packaged-Hermes regression reproduced the incorrect Error
+label, while its sample continued producing output; the reported real-session
+silence was not independently reproduced. The prior fixture only checked an
+immediate peak and even expected Error as the status. Coverage now exercises the
+actual bundled hermes-player/hermes-audio path through the installed SDK shell/CSP:
+missing closing quote, runtime missing-method error, and tempo mutation followed
+by a runtime error. Each waits 3 seconds (the sample lasts 0.28 seconds), then
+requires output above 0.001 in two separate 1.5-second windows, a Playing status,
+and a visible error alert. A disposable production-asset standalone regression
+also verifies syntax-error continuation. Physical speaker playback is not measured.
+
+Version bumped with the strict script (duplicate keys and wrong plugin names
+refused). Production build, 7 Node tests, 12 Python tests and both browser paths
+pass sequentially. Exact latest browser metrics and host deployment follow below.
+The change is frontend-only: existing v2 bootstrap reads generated documents on
+each request, so pane reload should obtain the new build without a gateway restart.
+Real signed-in v0.2.2 retest remains pending.
+
 ## Hermes-origin transport fix — v0.2.1 (2026-11-06, EST)
 
 Sequential validation on the recovered box passed: production build, 7/7 Node

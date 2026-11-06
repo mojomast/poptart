@@ -1,5 +1,20 @@
 # Handoff to the Hermes-equipped agent
 
+## Current: v0.2.2 invalid-edit continuation (2026-11-06, EST)
+
+The real Webapp v0.2.1 pane rendered and passed transport, revision-4/Break-section
+sync and reload after Kyle approved a gateway restart. Its invalid-edit behavior
+was rejected. The shared audio UI now derives transport from engine state and
+shows errors independently; syntax is preflighted and runtime failures restore
+the previous evaluated Pattern plus tempo. Packaged Hermes regression waits past
+sample tails and checks two audio windows for quote errors, runtime errors and
+tempo-changing runtime errors. Standalone shares the fix. See TEST_REPORT.md.
+
+This patch changes frontend assets only; the already-mounted v2 bootstrap reads
+the generated document per request. Reload the pane to pick it up. Do not restart
+any service without a new explicit approval. Real signed-in v0.2.2 retest remains
+pending; no speaker-output claim is made. Older sections below are historical.
+
 ## Hermes-origin transport fix — v0.2.1 (2026-11-06, EST)
 
 Sequential validation on the recovered box passed: production build, 7/7 Node

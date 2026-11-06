@@ -19,7 +19,7 @@ try {
  });
  await page.goto(url); const player=page.frameLocator('iframe[title="Poptart music editor"]');
  await player.getByRole('button',{name:'New track',exact:true}).first().click();
- const listed=await (await fetch('http://127.0.0.1:4311/api/tool',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+serviceToken},body:JSON.stringify({operation:'track.list',input:{}})})).json();
+ const listed=await (await fetch((process.env.SERVICE_URL || 'http://127.0.0.1:4311')+'/api/tool',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+serviceToken},body:JSON.stringify({operation:'track.list',input:{}})})).json();
  const track=listed.data.at(-1); assert.ok(track?.id);
  await page.getByLabel('OPERATION').fill('track.update');
  await page.getByLabel('INPUT JSON').fill(JSON.stringify({trackId:track.id,expectedRevision:track.revision,changes:{title:'Agent changed title'}}));
@@ -41,8 +41,10 @@ try {
  assert.ok(peak>0.00001,`expected nonzero sample audio, got ${peak}`);
  const denied=await af.evaluate(async()=>{try {const r=await fetch('/api/tool',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({operation:'track.list',input:{}})});return r.status;} catch {return 'blocked';}});
  assert.ok(denied === 403 || denied === 'blocked');
- await editor.fill('this is not valid $$$'); await audio.getByRole('button',{name:'Play',exact:true}).click();
- await audio.getByRole('status').getByText(/Error:/).waitFor({timeout:10000});
+ await editor.fill('s("bd*4)'); await audio.getByRole('button',{name:'Play',exact:true}).click();
+ await audio.getByRole('alert').getByText(/Unterminated string/).waitFor({timeout:10000});
+ await audio.getByRole('status').getByText('Playing',{exact:true}).waitFor();
+ await page.waitForTimeout(3000);
  const afterError = await af.evaluate(async()=>{const a=window.__studioAnalyser;let max=0;for(let i=0;i<20;i++){const d=new Float32Array(a.fftSize);a.getFloatTimeDomainData(d);max=Math.max(max,...d.map(Math.abs));await new Promise(r=>setTimeout(r,50));}return max});
  assert.ok(afterError>0.00001,`last pattern should keep producing audio after an invalid edit: ${afterError}`);
  await audio.getByRole('button',{name:'Stop',exact:true}).click();
