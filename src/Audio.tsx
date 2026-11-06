@@ -22,7 +22,7 @@ export function Audio() {
     try { await engine.current.play(pattern.current.code,pattern.current.tempo); setStatus('Playing'); }
     catch (e) { setStatus(`Error: ${e instanceof Error ? e.message : String(e)}`); }
   };
-  return <div style={{display:'flex',alignItems:'center',gap:10,font:'14px system-ui',background:'#f7f3eb',color:'#252222',padding:8}}>
+  return <div style={{display:'flex',alignItems:'center',gap:10,font:'14px system-ui',background:'#202024',color:'#eeeeef',padding:8}}>
     <button aria-label="Play" onClick={() => void play()}>▶ Play / apply</button>
     <button aria-label="Stop" onClick={() => {engine.current.stop();setStatus('Stopped')}}>■ Stop</button>
     <button aria-label={muted ? 'Unmute' : 'Mute'} onClick={() => {engine.current.setMuted(!muted);setMuted(!muted)}}>{muted?'Unmute':'Mute'}</button>

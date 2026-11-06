@@ -1,5 +1,7 @@
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+const serviceToken=await readFile(process.env.POPTART_TOKEN_FILE || '.workspace/service.token','utf8');
 
 // Start service and Vite separately as described in README; use a disposable workspace.
 const url=process.env.STUDIO_URL || 'http://127.0.0.1:5173/';
@@ -17,7 +19,7 @@ try {
  });
  await page.goto(url); const player=page.frameLocator('iframe[title="Poptart music editor"]');
  await player.getByRole('button',{name:'New track',exact:true}).first().click();
- const listed=await (await fetch('http://127.0.0.1:4311/api/tool',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({operation:'track.list',input:{}})})).json();
+ const listed=await (await fetch('http://127.0.0.1:4311/api/tool',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+serviceToken},body:JSON.stringify({operation:'track.list',input:{}})})).json();
  const track=listed.data.at(-1); assert.ok(track?.id);
  await page.getByLabel('OPERATION').fill('track.update');
  await page.getByLabel('INPUT JSON').fill(JSON.stringify({trackId:track.id,expectedRevision:track.revision,changes:{title:'Agent changed title'}}));

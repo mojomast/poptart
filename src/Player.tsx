@@ -3,9 +3,11 @@ import type { ToolRequest, ToolResult, Track } from '../shared/contracts';
 import { envelope, valid } from './protocol';
 
 const starter = 'stack(\n  note("c2 ~ c2 ~").s("triangle").decay(0.2),\n  note("<c3 eb3 g3 bb3>").s("sawtooth").lpf(800),\n  note("c5 eb5 g5 eb5").s("sine").gain(0.3)\n)';
-const capability = location.hash.slice(1);
-let hostOrigin = '';
-try { hostOrigin = new URL(document.referrer).origin; } catch { /* no trusted parent */ }
+const frameParams = new URLSearchParams(location.hash.slice(1));
+const capability = frameParams.get('cap') || location.hash.slice(1);
+let hostOrigin = frameParams.get('parent') || '';
+if (new URLSearchParams(location.search).has('hermes')) document.documentElement.classList.add('hermes-dark');
+try { if (!hostOrigin) hostOrigin = new URL(document.referrer).origin; } catch { /* no trusted parent */ }
 
 export function Player() {
   const [connected, setConnected] = useState(false);
@@ -22,7 +24,7 @@ export function Player() {
   const dirtyRef = useRef(dirty); dirtyRef.current = dirty;
   const hasEdits = useRef(dirty); hasEdits.current = dirty;
   const section = useRef(sectionId); section.current = sectionId;
-  const post = useCallback((type: string, payload: unknown, id?: string) => { if (hostOrigin && window.parent !== window) window.parent.postMessage(envelope(type, payload, capability, id), hostOrigin); }, []);
+  const post = useCallback((type: string, payload: unknown, id?: string) => { if (hostOrigin && window.parent !== window) window.parent.postMessage(envelope(type, payload, capability, id), hostOrigin === 'null' ? '*' : hostOrigin); }, []);
   const request = useCallback((operation: string, input: Record<string, unknown> = {}) => new Promise<ToolResult>(resolve => {
     const id = crypto.randomUUID();
     const timer = window.setTimeout(() => { pending.current.delete(id); resolve({ ok: false, error: { code: 'TIMEOUT', message: 'Host did not respond' } }); }, 10000);
