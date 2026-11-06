@@ -1,0 +1,9 @@
+name: hermes-strudel-studio
+version: 0.1.0
+description: "Strudel Studio integration scaffold; backend wiring requires local installation."
+author: Hermes Strudel Studio contributors
+kind: standalone
+platforms:
+  - linux
+  - macos
+  - windows
