@@ -2,7 +2,7 @@
 
 ## Repository
 
-Public repository: https://github.com/mojomast/poptart. Branch: `feat/hermes-strudel-studio`. The implementation baseline immediately before the handoff/polish commit is `b6035ea`; get the exact checkout commit with `git rev-parse HEAD` (a commit cannot contain its own hash without changing it). Read DEVPLAN.md, TEST_REPORT.md, RESEARCH.md, ARCHITECTURE.md, INTEGRATION.md and server/README.md before changes.
+Public repository: https://github.com/mojomast/poptart. Branch: `feat/hermes-strudel-studio`. The tested implementation baseline is `665f776c17cd69246e2918f449aeb2a189f8d698`; get the exact checkout commit with `git rev-parse HEAD` (a commit cannot contain its own hash without changing it). Read DEVPLAN.md, TEST_REPORT.md, RESEARCH.md, ARCHITECTURE.md, INTEGRATION.md and server/README.md before changes.
 
 Implemented: local Strudel engine, CC0 drum samples, React editor with sections, save and revision conflicts, nested isolated audio controls, loopback JSON music service, snapshots/static analysis/code export, mock host and basic frame handshake/reload. Agent-style requests call the real service. Browser test measured sample-driven audio and invalid-edit continuation. Service operations and JSON schema exist but **no Hermes tools are registered**. Desktop pane is a setup stub. Human must click inside the audio frame; remote transport currently does not actuate it. No automatic section timeline, visualizer, recording, signal-analysis report, audio export, WebSocket, production static hosting or authenticated Hermes integration is implemented. Live updates require applying with Play. UI has no snapshot/revert control. Running code can have side effects before an error; only ordinary failed evaluations were tested.
 
