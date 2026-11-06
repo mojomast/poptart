@@ -1,14 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { ToolRequest, ToolResult, Track } from '../shared/contracts';
 import { envelope, valid, randomId } from './protocol';
 import './hermes-config';
+import { applyTheme, normalizeTheme } from './theme';
 
 const starter = 'stack(\n  note("c2 ~ c2 ~").s("triangle").decay(0.2),\n  note("<c3 eb3 g3 bb3>").s("sawtooth").lpf(800),\n  note("c5 eb5 g5 eb5").s("sine").gain(0.3)\n)';
 const frameParams = new URLSearchParams(location.hash.slice(1));
 const capability = window.__POPTART_HOST__?.capability || frameParams.get('cap') || location.hash.slice(1);
 const opaqueRelay = Boolean(window.__POPTART_HOST__?.opaqueRelay);
 let hostOrigin = window.__POPTART_HOST__?.parent || frameParams.get('parent') || '';
-if (new URLSearchParams(location.search).has('hermes')) document.documentElement.classList.add('hermes-dark');
 try { if (!hostOrigin) hostOrigin = new URL(document.referrer).origin; } catch { /* no trusted parent */ }
 
 export function Player() {
@@ -22,6 +22,12 @@ export function Player() {
   const [message, setMessage] = useState('');
   const pending = useRef(new Map<string, { resolve: (r: ToolResult) => void; timer: number }>());
   const audioFrame = useRef<HTMLIFrameElement>(null);
+  const theme = useRef(normalizeTheme(window.__POPTART_HOST__?.theme));
+  useLayoutEffect(() => { theme.current = applyTheme(theme.current); }, []);
+  const updateTheme = useCallback((value: unknown) => {
+    theme.current = applyTheme(value);
+    audioFrame.current?.contentWindow?.postMessage({version:1,type:'audio.theme',payload:theme.current}, '*');
+  }, []);
   const current = useRef(track); current.current = track;
   const dirtyRef = useRef(dirty); dirtyRef.current = dirty;
   const hasEdits = useRef(dirty); hasEdits.current = dirty;
@@ -48,7 +54,8 @@ export function Player() {
     const active = current.current;
     if (!active) return;
     const code = active.sections.find(s => s.id === section.current)?.code ?? active.code;
-    audioFrame.current?.contentWindow?.postMessage({type:'audio.pattern', code, tempo:active.tempo}, '*');
+    audioFrame.current?.contentWindow?.postMessage({version:1,type:'audio.theme',payload:theme.current}, '*');
+    audioFrame.current?.contentWindow?.postMessage({version:1,type:'audio.pattern', code, tempo:active.tempo}, '*');
   }, []);
   useEffect(() => { sendPattern(); }, [track, sectionId, sendPattern]);
   const transport = useCallback(async (_action: string, _trackId?: string) => {
@@ -56,9 +63,11 @@ export function Player() {
   }, []);
   useEffect(() => {
     const receive = (event: MessageEvent) => {
+      if (event.source === audioFrame.current?.contentWindow && event.data?.version === 1 && event.data.type === 'audio.ready') { sendPattern(); return; }
       if (event.source !== window.parent || (event.origin !== hostOrigin && !(opaqueRelay && event.origin === 'null')) || !valid(event.data, capability)) return;
       const m = event.data;
-      if (m.type === 'init') { setConnected(true); setExpanded(Boolean((m.payload as { expanded?: boolean })?.expanded)); void refresh(); }
+      if (m.type === 'theme') updateTheme(m.payload);
+      if (m.type === 'init') { updateTheme((m.payload as {theme?:unknown})?.theme); setConnected(true); setExpanded(Boolean((m.payload as { expanded?: boolean })?.expanded)); void refresh(); }
       if (m.type === 'tool.result') { const p = pending.current.get(m.id); if (p) { clearTimeout(p.timer); pending.current.delete(m.id); p.resolve(m.payload as ToolResult); } }
       if (m.type === 'refresh') void refresh();
       if (m.type === 'display') setExpanded(Boolean((m.payload as { expanded?: boolean })?.expanded));
@@ -66,7 +75,7 @@ export function Player() {
     };
     window.addEventListener('message', receive); post('ready', {});
     return () => { window.removeEventListener('message', receive); };
-  }, [post, refresh, transport]);
+  }, [post, refresh, transport, sendPattern, updateTheme]);
   useEffect(() => () => { pending.current.forEach(p => { clearTimeout(p.timer); p.resolve({ ok: false, error: { code: 'CLOSED', message: 'Player closed' } }); }); pending.current.clear(); }, []);
   const update = (changes: Partial<Track>) => { setTrack(t => t ? { ...t, ...changes } : t); setDirty(true); };
   const create = async () => {
@@ -86,11 +95,11 @@ export function Player() {
   const setCode = (value: string) => { if (!track) return; if (activeSection) update({ sections: track.sections.map(s => s.id === activeSection.id ? { ...s, code: value } : s) }); else update({ code: value }); };
   return <div className={'studio ' + (!expanded ? 'is-compact' : '')}>
     <div className="studio-top"><div className="studio-logo"><span>✳</span><div>poptart <small>THE MUSIC WORKSPACE</small></div></div><div className="studio-status"><i/> {connected ? 'SESSION READY' : 'CONNECTING'} <span>● ● ●</span></div></div>
-    <div className="studio-body"><aside className="library"><div className="library-title"><div><span className="eyebrow">YOUR LIBRARY</span><h3>Tracks <span>{String(tracks.length).padStart(2, '0')}</span></h3></div><button className="add-button" onClick={create} disabled={!connected || busy} aria-label="New track">＋</button></div><div className="track-list">{tracks.map((t, i) => <button key={t.id} className={'track-item ' + (track?.id === t.id ? 'active' : '')} onClick={() => select(t)}><span className="track-index">{String(i + 1).padStart(2, '0')}</span><span className="track-name">{t.title}<small>{t.tempo} BPM</small></span><span>↗</span></button>)}{!tracks.length && <p className="empty-library">Your tracks will live here.<br/>Start with a fresh idea.</p>}</div><button className="new-track" onClick={create} disabled={!connected || busy}>＋ <span>New track</span></button><div className="library-bottom"><span>✳</span> A LITTLE EVERY DAY<br/><small>MAKES A LOT OF SOMEDAY.</small></div></aside>
+    <div className="studio-body">
     <main className="editor">{track ? <><div className="editor-heading"><div><div className="eyebrow">NOW EDITING <span>/</span> TRACK {String(Math.max(0, tracks.findIndex(t => t.id === track.id)) + 1).padStart(2, '0')}</div><input className="title-input" aria-label="Track title" value={track.title} onChange={e => update({ title: e.target.value })}/><div className="track-meta">YOUR SOUND, YOUR RULES <span>✳</span> REV {track.revision}</div></div><button className="save-button" onClick={save} disabled={!dirty || busy}>{busy ? 'Saving…' : dirty ? 'Save changes ↗' : '✓ Saved'}</button></div>
       <div className="section-bar"><div className="section-tabs"><button className={!sectionId ? 'selected' : ''} onClick={() => setSectionId(null)}>Main pattern</button>{track.sections.map(s => <button className={sectionId === s.id ? 'selected' : ''} key={s.id} onClick={() => setSectionId(s.id)}>{s.name}</button>)}<button className="add-section" onClick={addSection}>＋ <span>Section</span></button></div><span className="section-label">PATTERN / {activeSection ? activeSection.name.toUpperCase() : 'MAIN'}</span></div>
       {activeSection && <div className="section-edit"><label>SECTION NAME <input value={activeSection.name} onChange={e => update({ sections: track.sections.map(s => s.id === activeSection.id ? { ...s, name: e.target.value } : s) })}/></label><button onClick={() => { update({ sections: track.sections.filter(s => s.id !== activeSection.id) }); setSectionId(null); }}>Remove section ×</button></div>}
       <div className="code-editor"><div className="code-top"><span><i/> PATTERN EDITOR</span><span>STRUDEL / JS</span></div><div className="code-content"><div className="line-numbers" aria-hidden="true">{code.split('\n').map((_, i) => <div key={i}>{String(i + 1).padStart(2, '0')}</div>)}</div><textarea aria-label="Pattern code" spellCheck={false} value={code} onChange={e => setCode(e.target.value)}/></div><div className="code-bottom"><span>✳ &nbsp; MAKE IT YOURS</span><span>{code.split('\n').length} LINES</span></div></div>
-      <div className="transport"><iframe ref={audioFrame} title="Isolated audio controls" src={window.__POPTART_GUEST__?.audioHtml ? undefined : "/audio"} srcDoc={window.__POPTART_GUEST__?.audioHtml} sandbox="allow-scripts" onLoad={sendPattern} style={{border:0,width:'100%',height:96}}/><label className="tempo"><span>TEMPO</span><input type="number" min="20" max="400" aria-label="Tempo" value={track.tempo} onChange={e => update({ tempo: Number(e.target.value) })}/><b>BPM</b></label></div>{message && <div className="notice" role="status">{message}</div>}</> : <div className="welcome"><span className="welcome-icon">✳</span><div className="eyebrow">A GOOD PLACE TO START</div><h2>Let's make<br/><em>some noise.</em></h2><p>Every great track starts somewhere. Create a track and start playing with patterns.</p><button className="save-button" disabled={!connected || busy} onClick={create}>＋ &nbsp; Create your first track</button>{message && <div className="notice">{message}</div>}</div>}</main></div>
+      <div className="transport"><iframe ref={audioFrame} title="Isolated audio controls" src={window.__POPTART_GUEST__?.audioHtml ? undefined : "/audio"} srcDoc={window.__POPTART_GUEST__?.audioHtml} sandbox="allow-scripts" onLoad={sendPattern} style={{border:0,width:'100%',height:96}}/><label className="tempo"><span>TEMPO</span><input type="number" min="20" max="400" aria-label="Tempo" value={track.tempo} onChange={e => update({ tempo: Number(e.target.value) })}/><b>BPM</b></label></div>{message && <div className="notice" role="status">{message}</div>}</> : <div className="welcome"><span className="welcome-icon">✳</span><div className="eyebrow">A GOOD PLACE TO START</div><h2>Let's make<br/><em>some noise.</em></h2><p>Every great track starts somewhere. Create a track and start playing with patterns.</p><button className="save-button" disabled={!connected || busy} onClick={create}>＋ &nbsp; Create your first track</button>{message && <div className="notice">{message}</div>}</div>}</main><aside className="library"><div className="library-title"><div><span className="eyebrow">YOUR LIBRARY</span><h3>Tracks <span>{String(tracks.length).padStart(2, '0')}</span></h3></div><button className="add-button" onClick={create} disabled={!connected || busy} aria-label="New track">＋</button></div><div className="track-list">{tracks.map((t, i) => <button key={t.id} className={'track-item ' + (track?.id === t.id ? 'active' : '')} onClick={() => select(t)}><span className="track-index">{String(i + 1).padStart(2, '0')}</span><span className="track-name">{t.title}<small>{t.tempo} BPM</small></span><span>↗</span></button>)}{!tracks.length && <p className="empty-library">Your tracks will live here.<br/>Start with a fresh idea.</p>}</div><button className="new-track" onClick={create} disabled={!connected || busy}>＋ <span>New track</span></button><div className="library-bottom"><span>✳</span> A LITTLE EVERY DAY<br/><small>MAKES A LOT OF SOMEDAY.</small></div></aside></div>
     <div className="studio-footer"><span>✳ &nbsp; MADE TO BE PLAYED</span><span>THE POSSIBILITIES ARE ENDLESS &nbsp; ↗</span></div></div>;
 }

@@ -73,6 +73,12 @@ lifetime; no WebSocket is implemented. Reload/unmount destroys playback.
 The headless SDK-contract harness is not a real Hermes-pane test. Strudel code
 requires a human Play/apply gesture; it is JavaScript, not an OS sandbox.
 
+## Theme bridge (Hermes v0.22.7)
+
+Read only the documented SDK `useTheme()` hook: `theme` is the painted palette, `renderedMode` the painted mode (fall back to resolvedMode/dark). SandboxedFrame does not automatically forward either. The host sends allowlisted colors/font families in the version-1 initial binding/init and live `theme` envelopes through the existing source/capability checks; player forwards version-1 `audio.theme` to its own audio child. The guest validates CSS colors/fonts, maps them to studio-owned variables and defaults to dark. No DOM scraping, settings writes, customCSS, external font URLs or remount on a theme change. Standalone uses the same stylesheet/layout and dark fallback. The shared textarea editor and entire right-hand sidebar stack editor-first below 600px.
+
+Verified source: installed `website/docs/developer-guide/desktop-plugin-sdk.md` Themes/SandboxedFrame sections; `apps/desktop/src/themes/context.tsx` and `types.ts`; SDK uses `paintedTheme`/`renderedMode`. No backend route changes for v0.2.3, so reload/rescan is sufficient; no service restart.
+
 ## Validation
 
 ```sh

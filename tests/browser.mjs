@@ -29,6 +29,7 @@ try {
  await player.getByLabel('Track title').waitFor({state:'visible'});
  await page.waitForTimeout(300);
  assert.equal(await player.getByLabel('Track title').inputValue(),'Agent changed title');
+ const layout=await player.locator('.studio-body').evaluate(el=>({order:[...el.children].map(child=>child.tagName),right:el.querySelector('.library').getBoundingClientRect().left>=el.querySelector('.editor').getBoundingClientRect().right-1}));assert.deepEqual(layout.order,['MAIN','ASIDE']);assert.ok(layout.right);
  const editor=player.getByLabel('Pattern code'); await editor.fill('s("bd*4")');
  const audio=player.frameLocator('iframe[title="Isolated audio controls"]');
  await audio.getByRole('button',{name:'Play',exact:true}).click();

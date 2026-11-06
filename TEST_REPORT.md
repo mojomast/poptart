@@ -1,3 +1,15 @@
+# v0.2.3 — right-hand library and Hermes painted theme
+
+Verified SDK: installed Hermes v0.22.7 (`b200f5bc60e31588ba2cb60e288029c4a54ba5fa`). The documented `useTheme()` returns the painted `theme` and `renderedMode` (including accent/previews). SandboxedFrame does not automatically forward theme data. The bridge allowlists color tokens and font-family names, sends theme version 1 in initial binding/init and live `theme` envelopes, and relays them to the independently opaque audio controls. No custom CSS/font URLs, host DOM reads, setting writes, same-origin permission or core imports. Theme updates do not remount the guest or stop audio. Studio-owned CSS variables cover backgrounds, surfaces, text/muted/accent, borders, errors, textarea/editor/gutter/caret, inputs and buttons; absent/invalid theme data falls back to dark. The editor is a textarea, not CodeMirror.
+
+Shared Player DOM now places main/editor before the entire library/sidebar; wide panes display the library on the right, <=600px panes stack it below the editor without horizontal overflow. Standalone retains the dark fallback.
+
+Local validation: production build passed; Node service 7/7; Python plugin 12/12 (one upstream Starlette/httpx deprecation warning); packaged Desktop SDK-contract and standalone Chromium harnesses passed. Packaged test imports the actual plugin bridge and uses a reactive `useTheme` fixture plus the installed SDK Webapp shell/CSP: right-side DOM/geometry, 400px stacking, dark/light token application in player and audio realm, live updates preferring renderedMode, no audio-realm replacement, malformed-color rejection and dark fallback. Sample peak 0.43778625, synth peak 0.06226953, mute peak 0; syntax/runtime/runtime-with-tempo-change errors retained Playing and sample output. No CSP violations/page errors. This is headless contract evidence, not a signed-in Hermes theme-switch test or physical speaker verification. Screenshot: `/workspace/poptart-video/layout-v023.png` (synthetic dark Hermes-like palette, packaged player).
+
+Frontend-only: backend routes/service protocol unchanged. After rebuilding, running v2 bootstrap reads the new guest file without a gateway/sidecar restart. Desktop Rescan or Webapp reload is needed to load the updated SDK bridge; pane reload then loads updated guest assets (reload stops pane audio). Do not change Kyle's theme or other plugin switches. Deployment evidence and rollback path are recorded below once verified.
+
+---
+
 # Test report — 2026-11-06
 
 ## Invalid-edit continuation — v0.2.2 (2026-11-06, EST)

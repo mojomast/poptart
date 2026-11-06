@@ -1,0 +1,39 @@
+{
+  "source": "Hermes v0.22.7 b200f5bc60e3 useTheme().theme.colors / renderedMode; synthetic palettes, not user settings",
+  "dark": {
+    "background": "#18181b",
+    "foreground": "#ededf0",
+    "card": "#202024",
+    "muted": "#29292f",
+    "mutedForeground": "#9ca3af",
+    "primary": "#9d8ce7",
+    "primaryForeground": "#15121e",
+    "secondary": "#303039",
+    "secondaryForeground": "#ededf0",
+    "border": "#393942",
+    "input": "#29292f",
+    "ring": "#9d8ce7",
+    "midground": "#a78bfa",
+    "destructive": "#f87171",
+    "sidebarBackground": "#1d1d22",
+    "sidebarBorder": "#42424d"
+  },
+  "light": {
+    "background": "#f4f4f7",
+    "foreground": "#20202a",
+    "card": "#ffffff",
+    "muted": "#eeeef3",
+    "mutedForeground": "#666675",
+    "primary": "#6650b8",
+    "primaryForeground": "#ffffff",
+    "secondary": "#e6e6ee",
+    "secondaryForeground": "#20202a",
+    "border": "#c8c8d4",
+    "input": "#ffffff",
+    "ring": "#6650b8",
+    "midground": "#6633cc",
+    "destructive": "#c33244",
+    "sidebarBackground": "#eaeaf1",
+    "sidebarBorder": "#b8b8c8"
+  }
+}
