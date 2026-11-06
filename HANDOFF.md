@@ -1,5 +1,51 @@
 # Handoff to the Hermes-equipped agent
 
+## Enablement follow-up — 2026-11-06, 11:55–11:57 EST
+
+Kyle approved enabling `hermes-strudel-studio` and real-pane testing. Before
+activation, settings and the Desktop package copy were backed up under
+`/home/clanker01/.hermes/backups/poptart-enable-20261106-115527/`:
+`config.yaml`, `desktop-plugin/`, plus an absence record for `desktop-config.json`.
+The directory is mode 0700. No secret values were read, printed or committed.
+
+`hermes plugins enable hermes-strudel-studio --no-allow-tool-override` succeeded.
+Hermes reported: "Gateway reloaded plugins — deferred: tools (next session)."
+Normal enabled-plugin discovery in a new installed-runtime process then registered
+`poptart_studio`, and a real native `list` dispatch succeeded (two pre-existing
+validation tracks). This follow-up created/deleted no tracks.
+
+**Real-pane test blocked, not passed:** the supplied CUA port 8000 has no listener;
+`cua-computer-server` and `cua-xvfb` user units are both inactive/disabled. An
+independent Xvfb :99 process exists, but no real Hermes/Chromium/Electron UI process
+was found. The documented replacement CUA services are listening on authenticated
+3211 and 6901. This executor has no authorized CUA/browser-control connector;
+connector discovery confirmed none installed. Stored CUA credentials were not
+read and no browser session/cookies or private API were used as a substitute.
+The running dashboard `/api/plugins/hermes-strudel-studio/bootstrap` requires
+Hermes authentication (unauthenticated HTTP 401); this does not prove hot mounting.
+
+Consequently Desktop enable/Rescan, independent UI/backend toggles, actual pane
+opening, opaque handshake, sample/synth playback, worklets/CSP/sample fetching,
+stop/mute, tool-to-pane sync/conflicts, invalid-edit continuation and
+hide/unmount/reload are **unrun inside real Hermes**. Prior SDK-contract harness
+results still apply only to that harness. No PNG screenshots were fabricated;
+`/workspace/poptart-pane/STATUS.txt` records the blocker.
+
+Dashboard PID 2140675, gateway PID 2140943 and Poptart sidecar PID 2560116 remained
+unchanged. No service restart, disabled CUA-unit start, theme change or other
+plugin enablement was performed. The Python/backend selection is enabled; Desktop
+activation remains unverified/unperformed. No Hermes service restart is currently
+justified. To use the old requested route would require explicit approval to
+start the disabled **cua-computer-server** user unit (port 8000) on the existing
+display; do not also start cua-xvfb over the existing :99. Prefer providing a
+supported authenticated controller for the already-running CUA 3211 service instead.
+
+Rollback: run `hermes plugins disable hermes-strudel-studio` for the narrow supported
+functional rollback. Desktop flags were not changed. For an exact settings rollback,
+compare later edits before restoring the backed-up `config.yaml`; blindly restoring
+it could overwrite unrelated concurrent settings. Do not restart services to roll back.
+
+
 ## Current integration update — 2026-11-06 (America/Toronto, EST)
 
 The original scaffold below is historical. Version 0.2.0 now implements an

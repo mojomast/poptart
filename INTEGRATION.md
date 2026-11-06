@@ -21,10 +21,9 @@ Generated copies are deliberately gitignored: a raw checkout is not an installab
 binary package until built. The cloned repository and lockfile supply corresponding
 source. No tag, release, catalog entry or catalog admission claim is made.
 
-The Python backend and Desktop half are separately opt-in. Do not change existing
+The Python backend and Desktop half are separately opt-in. Follow-up: Python was enabled via the supported CLI on 2026-11-06 at 11:56 EST; Desktop activation and real-pane tests are blocked by unavailable authorized UI control (details in TEST_REPORT.md). Do not change existing
 user enablement or theme preferences. The Desktop contribution declares
-`defaultEnabled:false`. On this host both remain opt-in; CLI validation loads only
-this plugin in a temporary process, without changing `plugins.enabled`.
+`defaultEnabled:false`. Initial isolated CLI validation did not change `plugins.enabled`. The subsequent approved enablement now permits normal new-session discovery; a native list dispatch passed without manually forcing this plugin to load.
 The installed Desktop synchronizer created the app-level copy automatically.
 The v0.22.7 backend supports hot-mount on first authorized request after enablement;
 Desktop supports Rescan/hot reload. **No service restart is currently established
