@@ -1,0 +1,21 @@
+{
+  "width":1920,"height":1080,"fps":60,"duration":40,
+  "bpm":126,"beatsPerBar":4,"totalBars":21,
+  "audioSourceStart":1.61052380952381,
+  "sourceMainDownbeat":13.03909523809524,
+  "fadeIn":0.02,"fadeOut":1.5,"lufs":-14,"truePeak":-1.3,
+  "workers":2,"ffmpegThreads":2,"previewMaxBytes":25000000,
+  "cacheMaxBytes":1800000000,"previewWidth":1280,"previewHeight":720,
+  "grainOpacity":0.018,"sourceCommit":"04e9d66",
+  "productCommit":"13de043","release":"v0.2.4",
+  "scenes":[
+    {"id":"01-score","bars":2},
+    {"id":"02-hermes","bars":3},
+    {"id":"03-operations","bars":3},
+    {"id":"04-highlights","bars":4},
+    {"id":"05-continuation","bars":2},
+    {"id":"06-library","bars":3},
+    {"id":"07-drop","bars":1.5},
+    {"id":"08-release","bars":2.5}
+  ]
+}
