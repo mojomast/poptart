@@ -1,0 +1,9 @@
+Hermes Strudel Studio, 2026, contributors. Project code is AGPL-3.0-or-later, WITHOUT WARRANTY; see LICENSE.
+
+Strudel: https://codeberg.org/uzu/strudel, copyright its contributors, AGPL-3.0-or-later. Its npm packages and their transitive dependencies retain their own licenses and notices. See package-lock.json and installed package license files for the complete resolved inventory.
+
+Composition guidance in skills/strudel-studio/SKILL.md is adapted from vanities/toaster-strudel at commit 1b53c590b1d84e9eff2904cdd29dae1e719c7014, GPL-3.0, modified 2026-11-06. The Toaster GPL text is in LICENSES-TOASTER-GPL-3.0.txt. GPL-3 and AGPL-3 section 13 permit their combination while the GPL portions retain GPL terms.
+
+No sample pack is included unless explicitly identified elsewhere. Do not assume upstream sample libraries permit redistribution; audit individual assets before adding them.
+
+`public/samples/{bd,sd,hh}.wav` are original synthesized sounds dedicated to the public domain under CC0-1.0. See public/samples/README.md. Strudel's superdough contains contributions from WebDirt (GPL-3.0) and other upstream sources; preserve dependency license files and their notices when distributing bundles.

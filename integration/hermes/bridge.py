@@ -1,11 +1,20 @@
 """Authenticated local sidecar. No process/network activity during registration."""
-import fcntl
+from contextlib import contextmanager
+try:
+    import fcntl
+except ImportError:  # Windows
+    fcntl = None
+try:
+    import msvcrt
+except ImportError:  # POSIX
+    msvcrt = None
 import inspect
 import json
 import os
 from pathlib import Path
 import secrets
-import selectors
+import queue
+import threading
 import subprocess
 import urllib.request
 
@@ -50,11 +59,36 @@ def _request(port, token, request):
         return json.load(response)
 
 
+@contextmanager
+def startup_lock(path):
+    """Serialize first startup across processes on POSIX and Windows; fail closed."""
+    with path.open('a+b') as lock:
+        if fcntl is not None:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+        elif msvcrt is not None:
+            # msvcrt locks a byte range; seed the file and always lock byte zero.
+            lock.seek(0, os.SEEK_END)
+            if lock.tell() == 0:
+                lock.write(b'\0')
+                lock.flush()
+            lock.seek(0)
+            msvcrt.locking(lock.fileno(), msvcrt.LK_LOCK, 1)
+        else:
+            raise RuntimeError('No supported interprocess startup lock available')
+        try:
+            yield
+        finally:
+            if fcntl is not None:
+                fcntl.flock(lock, fcntl.LOCK_UN)
+            else:
+                lock.seek(0)
+                msvcrt.locking(lock.fileno(), msvcrt.LK_UNLCK, 1)
+
+
 def connection():
     directory = data_dir()
     directory.mkdir(parents=True, exist_ok=True, mode=0o700)
-    with (directory / 'startup.lock').open('a') as lock:
-        fcntl.flock(lock,fcntl.LOCK_EX)
+    with startup_lock(directory / 'startup.lock'):
         token_file = directory / 'service.token'
         try:
             fd = os.open(token_file,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
@@ -63,7 +97,9 @@ def connection():
         else:
             with os.fdopen(fd,'w') as stream: stream.write(secrets.token_hex(32))
         info = token_file.lstat()
-        if token_file.is_symlink() or not token_file.is_file() or info.st_uid != os.getuid() or info.st_mode & 0o777 != 0o600:
+        # Windows has no POSIX uid/mode bits; rely on the profile directory ACL.
+        insecure_posix = os.name != 'nt' and (info.st_uid != os.getuid() or info.st_mode & 0o777 != 0o600)
+        if token_file.is_symlink() or not token_file.is_file() or insecure_posix:
             raise RuntimeError('Service token file must be owner-owned regular mode 0600')
         token = token_file.read_text()
         if len(token)!=64 or any(c not in '0123456789abcdef' for c in token): raise RuntimeError('Invalid service token file')
@@ -76,22 +112,30 @@ def connection():
             _request(port,token,{'operation':'track.list','input':{}})
             return port, token
         service = ROOT / 'service' / 'index.js'
-        assets = ROOT / 'assets'
-        if not service.is_file() or not (assets/'index.html').is_file(): raise RuntimeError('Build the plugin with npm run build first')
+        if not service.is_file() or not (ROOT/'guest-document.html').is_file():
+            raise RuntimeError('Incomplete plugin package; reinstall from the catalog or regenerate with npm run build')
         # Minimal environment: do not inherit host provider keys into the sidecar.
-        env = {key:os.environ[key] for key in ['PATH','HOME','LANG'] if key in os.environ}
-        env.update(PORT='0', POPTART_TOKEN_FILE=str(token_file),POPTART_DATA_FILE=str(directory/'tracks.json'),POPTART_ASSETS=str(assets))
+        env = {key:os.environ[key] for key in ['PATH','HOME','LANG','SystemRoot','WINDIR','TEMP','TMP'] if key in os.environ}
+        env.update(PORT='0', POPTART_TOKEN_FILE=str(token_file),POPTART_DATA_FILE=str(directory/'tracks.json'))
         # Persist a starting marker first: failed/uncertain startup never silently spawns a second owner.
         fd = os.open(state_file,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
         with os.fdopen(fd,'w') as stream: json.dump({'port':None,'status':'starting'},stream)
         log_fd = os.open(directory/'service.log',os.O_WRONLY|os.O_APPEND|os.O_CREAT,0o600)
         with os.fdopen(log_fd,'ab') as log:
             process = subprocess.Popen(['node',str(service)],env=env,cwd=directory,stdout=subprocess.PIPE,stderr=log,start_new_session=True)
-        with selectors.DefaultSelector() as selector:
-            selector.register(process.stdout,selectors.EVENT_READ)
-            if not selector.select(10): raise RuntimeError('Service startup timed out; inspect private service.log')
-            line = process.stdout.readline(4096)
-        process.stdout.close()
+        # Windows select() cannot wait on subprocess pipes. A bounded reader
+        # thread works on both platforms; a timeout retains the starting marker.
+        ready = queue.Queue(maxsize=1)
+        def read_ready():
+            try:
+                ready.put(process.stdout.readline(4096))
+            finally:
+                process.stdout.close()
+        threading.Thread(target=read_ready, daemon=True).start()
+        try:
+            line = ready.get(timeout=10)
+        except queue.Empty:
+            raise RuntimeError('Service startup timed out; inspect private service.log') from None
         state = {'port':json.loads(line)['port'],'pid':process.pid}
         temporary = directory/'service.json.tmp'
         fd = os.open(temporary,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)

@@ -5,7 +5,7 @@
 **A local [Strudel](https://strudel.cc) live-coding studio: write patterns, hit Play, and let your Hermes agent compose alongside you.**
 
 [![License: AGPL-3.0-or-later](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue)](LICENSE)
-[![Hermes plugin](https://img.shields.io/badge/Hermes_plugin-v0.2.4-7c5cff)](integration/hermes/plugin.yaml)
+[![Hermes plugin](https://img.shields.io/badge/Hermes_plugin-v0.2.5-7c5cff)](integration/hermes/plugin.yaml)
 [![Requires Hermes](https://img.shields.io/badge/Hermes-%E2%89%A5%200.22.7-informational)](INTEGRATION.md)
 [![Strudel](https://img.shields.io/badge/Strudel-1.2.6-a3e635)](package.json)
 [![Node](https://img.shields.io/badge/node-22%2B-339933)](#quick-start-standalone-studio)
@@ -68,12 +68,10 @@ Open **http://127.0.0.1:5173/**, create a track, and click **Play / apply**. Bro
 
 ## Install as a Hermes plugin
 
-Build first. The installable plugin is the **built `integration/hermes` directory**, not the repo root.
-
-```sh
-npm ci
-npm run build
-```
+The installable plugin is the self-contained, committed **`integration/hermes`
+directory**, not the repo root. Catalog installs need **Node 22+**, not npm or a
+local build. Source contributors regenerate and verify it with `npm ci`,
+`npm run build`, and `npm run build:check`; see [INTEGRATION.md](INTEGRATION.md).
 
 **Option A: from the Hermes catalog** *(pending: available once the catalog PR is merged)*
 

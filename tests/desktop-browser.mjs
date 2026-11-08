@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 import {createApp} from '../server/index.js';
 const temp=await mkdtemp(join(tmpdir(),'poptart-desktop-'));
 const token=randomBytes(32).toString('hex');
-const service=createApp({file:join(temp,'tracks.json'),token,assets:resolve('integration/hermes/assets')});
+const service=createApp({file:join(temp,'tracks.json'),token});
 await new Promise(r=>service.listen(0,'127.0.0.1',r));
 const themes=JSON.parse(await readFile('tests/fixtures/hermes-theme.json','utf8'));
 const darkAppearance={theme:{colors:themes.dark,typography:{fontSans:'system-ui,sans-serif',fontMono:'monospace'}},renderedMode:'dark',resolvedMode:'dark'};

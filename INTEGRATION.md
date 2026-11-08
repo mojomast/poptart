@@ -1,113 +1,121 @@
-# Hermes integration — 0.2.1
+# Hermes integration — 0.2.5
 
-Verified on moltussy-1 against **Hermes Agent v0.22.7**, source
-`b200f5bc60e31588ba2cb60e288029c4a54ba5fa`, Python 3.14.9, Node 24.13.0.
-The live source overrides older scaffold assumptions. `register_tool` still has
-no `output_schema`; registration uses keywords and signature-gates that field.
+Targets **Hermes Agent >=0.22.7** and **Node 22+**. Registration uses keyword
+arguments and signature-gates `output_schema` for host compatibility. The native
+plugin exposes one tool, `poptart_studio`, plus the opt-in Desktop/Webapp pane.
 
-## Build and install
+## Install and regenerate
+
+The catalog installs **only `integration/hermes`**, not the repository root.
+That directory is self-contained in Git: Python adapters, service source, bundled
+skill, notices, and the prebuilt guest HTML/metadata are committed. **Catalog
+users need Node at runtime, but do not need npm, a build step, or node_modules.**
+The catalog submission is pending; the catalog SHA must be updated separately
+after review of this version.
+
+For a source checkout:
 
 ```sh
-npm ci
+npm ci --ignore-scripts
 npm run build
-# Build creates a self-contained plugin tree, including assets/service/skills/notices.
-ln -s "$PWD/integration/hermes" ~/.hermes/plugins/hermes-strudel-studio
+npm run build:check
+python -m pytest -q tests/plugin  # pytest, jsonschema, ruamel.yaml, fastapi, httpx
 hermes plugins doctor integration/hermes --ci
 hermes plugins validate integration/hermes --install-deps
 ```
 
-Install **the built integration/hermes directory**, not the repository root.
-Generated copies are deliberately gitignored: a raw checkout is not an installable
-binary package until built. The cloned repository and lockfile supply corresponding
-source. No tag, release, catalog entry or catalog admission claim is made.
+`npm run build` typechecks and builds standalone `dist/`, then runs
+`scripts/package-plugin.mjs`. The packager copies `server/` (excluding tests),
+`skills/`, and license notices into the plugin. Pinned esbuild bundles the two
+`src/hermes-*.tsx` entrypoints into `guest-document.html`, including CSS, worklets
+and original CC0 sample data URLs, and writes its SHA-256 to `guest-build.json`.
+All generated installed files are text; no binary files or node_modules ship.
+The standalone Vite assets are **not** needed or shipped in the native package.
+Dependencies and bundler versions are pinned by `package-lock.json`.
 
-The Python backend and Desktop half are separately opt-in. Follow-up: Python was enabled via the supported CLI on 2026-11-06 at 11:56 EST; Desktop activation and real-pane tests are blocked by unavailable authorized UI control (details in TEST_REPORT.md). Do not change existing
-user enablement or theme preferences. The Desktop contribution declares
-`defaultEnabled:false`. Initial isolated CLI validation did not change `plugins.enabled`. The subsequent approved enablement now permits normal new-session discovery; a native list dispatch passed without manually forcing this plugin to load.
-The installed Desktop synchronizer created the app-level copy automatically.
-Restarts: **`hermes-gateway` must be restarted after a backend route change on an
-already-mounted plugin**, because v0.22.7 refuses to hot-remount an existing plugin API
-namespace (confirmed on moltussy-1 for v0.2.1). On a first install, hot-mount on the first
-authorized request after enablement may work; if the pane reports a backend error, restart
-`hermes-gateway`. Frontend-only changes need only Desktop Rescan/Webapp reload plus a pane
-reload. **Ask Kyle before any restart, including the Poptart sidecar.**
+Commit the regenerated files whenever source changes. `npm run build:check`
+rebuilds into a temporary directory and compares the complete generated file list
+and bytes against the committed package, without rewriting it. The package CI
+runs this check plus service, registration, subdir-only install and strict YAML
+tests. A stale/missing/extra generated file fails the check.
+
+For local development, symlink the directory into the active profile's plugins:
+
+```sh
+mkdir -p ~/.hermes/plugins
+ln -s "$PWD/integration/hermes" ~/.hermes/plugins/hermes-strudel-studio
+hermes plugins enable hermes-strudel-studio
+```
+
+Backend and Desktop are independently opt-in; Desktop ships with
+`defaultEnabled: false`. Enable the pane under Capabilities, then Rescan/reload.
+Backend route changes on an already-mounted plugin may require a gateway restart;
+frontend-only changes normally need only a Rescan/reload and pane reload. Perform
+service maintenance deliberately and preserve profile data.
 
 ## Backend and tool
 
-One native tool, `poptart_studio`, exposes `op` and `input`. Exact per-op fields are
-in `hermes-strudel-studio:strudel-studio`. Draft 2020-12 validation rejects unknown
-fields, wrong types, invalid IDs, stale revisions, duplicate section IDs and empty
-updates before authenticated requests. Success and failure include
-`{ok,error,code,fix}`; success also carries `data`. No arbitrary shell, delete,
-remote transport or audio-export operation is exposed.
+`poptart_studio` takes `op` and `input`. Exact fields are in the bundled
+`hermes-strudel-studio:strudel-studio` skill. Draft 2020-12 validation rejects
+unknown fields, invalid IDs/types, stale revisions, duplicate section IDs and
+empty updates before authenticated requests. Results include
+`{ok,error,code,fix}` and success adds `data`. There is no arbitrary shell,
+delete, remote transport or audio-export operation.
 
-The first valid call lazily starts **one** detached Node sidecar, under a startup
-file lock. No systemd unit is installed. `plugin_data_dir('hermes-strudel-studio')`
-holds tracks, service.json, private service.log and a per-install random 256-bit
-service.token (owner-owned regular mode 0600). The token is never logged, returned,
-or sent to the Desktop renderer, editor or nested audio guest. All API requests
-require its bearer value; opaque/unrelated browser origins are rejected independently.
-The Python client bypasses ambient HTTP proxy settings. Node binds only 127.0.0.1
-on an OS-selected port; subprocess environment excludes provider credentials.
+The first valid call lazily starts one detached Node sidecar. Registration has
+no process/network activity. Profile `plugin_data_dir('hermes-strudel-studio')`
+holds tracks, service state, private logs and a random 256-bit token. A cross-process
+startup lock uses `fcntl.flock` on POSIX and `msvcrt.locking` on Windows; absence of
+both fails closed. Windows startup uses a pipe-reader thread rather than POSIX-only
+pipe selection. POSIX token files must be owner-owned, regular and mode 0600;
+Windows uses the profile directory's inherited ACL, which must be private to the
+user. Symlinks and malformed tokens are rejected on both platforms. Windows
+import/lock behavior is mock-tested; native Windows runtime testing remains open.
 
-A persisted starting marker prevents ambiguous failed startup from spawning a
-second store owner. If an existing service becomes unavailable, calls return
-`SERVICE_UNAVAILABLE`; **there is no automatic restart**. Obtain approval before
-stopping/restarting it; preserve tracks and the token, reconcile the PID/listener,
-and remove stale service.json only as part of that approved recovery. Do not
-start another owner against the same store. Service code changes need an approved
-sidecar restart; asset rebuilds do not restart it.
+The token is never logged, returned or delivered to a guest. Node binds only
+127.0.0.1 on an OS-selected port. API requests require a bearer token and reject
+unrelated/opaque browser origins. The Python client bypasses HTTP proxies and the
+sidecar environment excludes provider credentials. The native sidecar serves no
+public UI assets; the guest comes through Hermes' authenticated bootstrap route.
 
-## Pane bridge
+A starting marker prevents uncertain startup from spawning a second store owner.
+An unavailable existing service returns `SERVICE_UNAVAILABLE`, never an automatic
+restart. During deliberate recovery, preserve tracks and token, reconcile the
+PID/listener, then remove stale state only after the old owner is stopped. Never
+run two sidecars against one store.
 
-`desktop/plugin.js` uses the installed SDK `SandboxedFrame`, scripts-only opaque
-origin, no same-origin token, no referrer and no permission delegation. It uses
-only SDK/React imports; no core DOM scraping, eval or prototype patching.
-`ctx.rest` reaches the gated Python namespace. `/bootstrap` returns a self-contained credential-free guest document, never a sidecar URL; `/tool` uses the same strict native-operation router. Guest envelopes
-are version 1, source-checked, opaque-origin-checked and bound to a per-mount random
-capability. Request types/size and concurrency are bounded. This capability is
-not the service token. The audio guest never receives it.
+## Pane and security boundary
 
-SandboxedFrame removes referrers, and its Webapp implementation discards data-URL fragments. The trusted parent therefore inserts the frame capability and expected parent binding into the editor document before passing it to the SDK. The SDK uses the same-origin `/assets/webapp-guest.html` shell; the audio child is independently opaque srcdoc and receives no capability. The authenticated bundle includes JS/CSS, samples as data URLs and worklets as bundled blob sources. Neither guest requests loopback assets or receives credentials. The versioned `plugin_api_v2.py` entrypoint avoids the installed host's by-path ASGI cache without restarting it. Three-second refresh notifications fetch
-authoritative state without replacing dirty edits. Polling is bounded by pane
-lifetime; no WebSocket is implemented. Reload/unmount destroys playback.
+`desktop/plugin.js` imports only SDK/React APIs. It uses `SandboxedFrame` with
+scripts-only opaque isolation, no referrer, no same-origin permission, and no
+core DOM scraping, eval or prototype patching. `ctx.rest` reaches the authenticated
+Python `/bootstrap` and `/tool` routes. The bootstrap contains the self-contained,
+credential-free guest document, not a sidecar URL. Versioned messages are source-,
+origin- and per-mount capability-checked, bounded in size/concurrency, and never
+expose the service token. The nested audio guest receives no host capability.
 
-**Remote Webapp transport:** only the Hermes connection is needed; tunneling a sidecar port is neither necessary nor supported by this pane. Audio still requires a secure context (HTTPS or a localhost tunnel). OAuth-specific routing, actual native Desktop data-document worklet support and non-Chromium browsers remain unverified. The regression uses the installed Webapp shell/CSP, not a real signed-in post-fix session.
-The headless SDK-contract harness is not a real Hermes-pane test. Strudel code
-requires a human Play/apply gesture; it is JavaScript, not an OS sandbox.
+The Hermes Webapp guest shell receives the editor document via the SDK. The host
+inserts the frame capability and parent binding into that document. Sample data
+and worklet blob sources are bundled, so opaque guests need no anonymous HTTP
+asset fetches. The versioned `plugin_api_v2.py` preserves the backend namespace.
+Three-second bounded refreshes preserve dirty edits. Reload/unmount stops audio.
+Only the Hermes connection is needed; tunneling a sidecar port is unsupported.
+Audio needs a secure context (HTTPS or localhost) and a human Play/apply gesture.
+Strudel executes arbitrary JavaScript; browser isolation is **not an OS sandbox**.
+Native Desktop data-document worklets and non-Chromium browsers remain unverified.
 
-## Theme bridge (Hermes v0.22.7)
+The documented SDK `useTheme()` hook supplies allowlisted palette/font values to
+the isolated guests. Invalid or absent values fall back to dark, without changing
+host preferences or scraping its DOM. Below 600px, the library stacks below the
+editor. Scheduler-backed Strudel Drawer events paint mini-notation highlights;
+Stop clears them and dirty buffers hide them until they match evaluated source.
+Rejected edits retain the last-good playing pattern.
 
-Read only the documented SDK `useTheme()` hook: `theme` is the painted palette, `renderedMode` the painted mode (fall back to resolvedMode/dark). SandboxedFrame does not automatically forward either. The host sends allowlisted colors/font families in the version-1 initial binding/init and live `theme` envelopes through the existing source/capability checks; player forwards version-1 `audio.theme` to its own audio child. The guest validates CSS colors/fonts, maps them to studio-owned variables and defaults to dark. No DOM scraping, settings writes, customCSS, external font URLs or remount on a theme change. Standalone uses the same stylesheet/layout and dark fallback. The shared textarea editor and entire right-hand sidebar stack editor-first below 600px.
+## Validation scope
 
-Verified source: installed `website/docs/developer-guide/desktop-plugin-sdk.md` Themes/SandboxedFrame sections; `apps/desktop/src/themes/context.tsx` and `types.ts`; SDK uses `paintedTheme`/`renderedMode`. No backend route changes for v0.2.3, so reload/rescan is sufficient; no service restart.
-
-## Validation
-
-```sh
-npm test
-npm run build
-python -m pytest -q tests/plugin  # jsonschema, ruamel.yaml, pytest installed
-python scripts/measure-schema.py # tiktoken; 127 o200k_base tokens for [SCHEMA]
-npx playwright install chromium
-npm run test:desktop             # self-contained production-asset SDK-contract harness
-hermes --run-module pdb -c continue -c quit scripts/validate-hermes.py integration/hermes
-```
-
-The last command exercises actual installed PluginManager/PluginContext/registry
-dispatch and the exact backend router without enabling it in a running dashboard.
-It creates a validation track and leaves the first-started sidecar running. The
-PDB completion banner does not restart a service. See TEST_REPORT.md for evidence
-and HANDOFF.md for the remaining mandatory checks.
-
-
-## Mini-notation highlights (0.2.4)
-
-Frontend-only, not yet deployed. The audio guest uses Strudel's scheduler-backed
-Drawer and sends informational `audio.evaluated`/`audio.highlights` messages to
-its own parent. The parent checks version/source, bounds offsets and paints an
-inert textarea mirror with the Hermes accent. It never accepts privileged host
-requests from that child. Stop clears/cancels; rejected evaluation retains the
-last-good pattern/locations. Highlights deliberately pause for dirty buffers
-until source matches last-good or a successful apply replaces it. No tool/backend
-schema or route change; no gateway restart required. See TEST_REPORT.md.
+The tests exercise production guests using a headless SDK-contract/Webapp-shell
+fixture, not a signed-in Hermes session or physical speakers. See TEST_REPORT.md
+for results. The isolated-install test copies only the installed subdirectory,
+reads the actual skill during registration, starts a disposable sidecar, calls
+the registered tool and stops only that fixture process. No live host deployment
+or restart is performed by these checks.

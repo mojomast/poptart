@@ -1,3 +1,38 @@
+# v0.2.5 — catalog packaging review fix (2026-11-07 EST)
+
+- Commits the self-contained guest HTML/metadata, service JS source, skill and
+  notices inside `integration/hermes`. Standalone Vite `dist/` assets and binary
+  WAV files are not installed; sample data URLs are embedded in the text guest.
+- `npm ci --ignore-scripts`, production typecheck/build and byte-for-byte
+  `npm run build:check` passed. An intentionally changed guest metadata file was
+  rejected by the reproducibility check, then restored. CI runs the check.
+- Node service tests: **7 passed**. Python plugin tests: **16 passed**, including
+  duplicate-key YAML rejection, package version equality, subdir-only copy with
+  actual SKILL.md registration and successful `poptart_studio` list dispatch,
+  import with `fcntl` mocked absent, the mocked msvcrt lock/unlock path and
+  fail-closed behavior without either lock backend. One upstream Starlette/httpx
+  deprecation warning; no failures.
+- Packaged Desktop/Webapp-shell and standalone Chromium regressions passed:
+  moving scheduler highlights, invalid-edit continuation, themes/layout,
+  sample/synth audio, zero mute, dirty-buffer preservation and reload. Packaged
+  test reported no CSP violations or page errors. These are headless contract
+  tests, not signed-in Hermes, native Windows or physical-speaker verification.
+- Box Hermes version: **0.23.0**; test-host target remains **0.22.7** (untouched).
+  Isolated-HERMES_HOME doctor passed (1 tool, 0 hooks); validate passed. The
+  development checkout still contains ignored legacy Vite assets, so this first
+  validation warned on their Unicode identifier regex table.
+- Unicode diagnostic using the installed validator's invisible character set:
+  generated guest HTML has **none**. Standalone `dist/assets/index-CHvGeaau.js`
+  contains two U+200C and two U+200D characters from dependency identifier tables;
+  that unused standalone bundle is not part of the new native package. No
+  security-scan suppression or validator changes were made.
+- No deployment, host restart, tag, release, catalog SHA update or PR comment.
+
+Clean-clone catalog-install verification follows in the review-fix verification
+record below when complete.
+
+---
+
 # v0.2.4 — scheduler-synced mini-notation highlights (not deployed)
 
 Implemented directly on `feat/hermes-strudel-studio`; the v0.2.3 tag remains at

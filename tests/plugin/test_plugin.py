@@ -75,7 +75,10 @@ class PluginTests(unittest.TestCase):
                 # Public assets work for opaque guests; API does not.
                 import urllib.request, urllib.error
                 url=f"http://127.0.0.1:{state['port']}"
-                with urllib.request.urlopen(url+'/player') as r: self.assertIn(b'<html',r.read())
+                # Hermes serves the guest over its authenticated bootstrap, not sidecar HTTP.
+                with self.assertRaises(urllib.error.HTTPError) as missing:
+                    urllib.request.urlopen(url+'/player')
+                self.assertEqual(missing.exception.code,404)
                 with urllib.request.urlopen(url+'/assets/../service.token') as r: self.fail('Traversal allowed')
             except urllib.error.HTTPError as e:
                 self.assertEqual(e.code,404)
