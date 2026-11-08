@@ -17,7 +17,9 @@
   sample/synth audio, zero mute, dirty-buffer preservation and reload. Packaged
   test reported no CSP violations or page errors. These are headless contract
   tests, not signed-in Hermes, native Windows or physical-speaker verification.
-- Box Hermes version: **0.23.0**; test-host target remains **0.22.7** (untouched).
+- Box runtimes: Node **20.19.2**, Python **3.13.5**, Hermes **0.23.0**.
+  The documented supported Node floor is 22+ (package CI uses Node 22); the
+  Hermes test-host target remains **0.22.7** (untouched).
   Isolated-HERMES_HOME doctor passed (1 tool, 0 hooks); validate passed. The
   development checkout still contains ignored legacy Vite assets, so this first
   validation warned on their Unicode identifier regex table.
@@ -28,8 +30,34 @@
   security-scan suppression or validator changes were made.
 - No deployment, host restart, tag, release, catalog SHA update or PR comment.
 
-Clean-clone catalog-install verification follows in the review-fix verification
-record below when complete.
+## Clean-clone catalog verification
+
+Verified fix commit `1984e7699c1e361e5e24d40566774bf1c886cad4` using an independent
+`git clone --no-local --single-branch --branch feat/hermes-strudel-studio` from
+the local Git repository (not a worktree copy). Copied **only** its committed
+`integration/hermes` into a separate temporary installation directory; no
+node_modules, npm build or sibling repository files accompanied the install.
+
+- Imported the native package; stub `register(ctx)` read the real SKILL.md and
+  registered exactly one tool. Invoking that registered `poptart_studio` handler
+  with `list` started a disposable sidecar and returned `ok: true, data: []`.
+  The driver terminated only that fixture process afterward.
+- Guest HTML/metadata and all service files were present. Installed payload:
+  **18 files, 1,202,724 bytes** (excluding Python's runtime bytecode cache).
+  No standalone assets directory, binary files or node_modules were present.
+- With a fresh temporary HERMES_HOME, actual Hermes doctor passed (1 tool,
+  0 hooks); catalog validate passed with **security scan: safe**, without the
+  legacy development checkout's invisible_unicode caution.
+- In the clean clone, `npm ci --ignore-scripts` and `npm run build:check` passed:
+  all **11 generated files** matched the committed file set and bytes exactly.
+  Re-running the Python suite there again passed **16/16** (one upstream warning).
+- The base and complete staged fix tree were secret-scanned before commit;
+  **94 unique tracked blobs**, no provider/Orbit/OpenRouter/Google Maps/Google
+  Colab/private-key patterns. The final outgoing commits are scanned again
+  immediately before push.
+
+Windows is mock-tested, not verified on a native Windows machine. No host-side
+runtime update, release/tag, catalog repin or PR comment is included.
 
 ---
 
