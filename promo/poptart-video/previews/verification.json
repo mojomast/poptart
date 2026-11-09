@@ -1,0 +1,42 @@
+{
+  "bpm": 126,
+  "bars": 21,
+  "frames": 2400,
+  "cutMaxErrorSeconds": 0.007142857142857562,
+  "sourceGridAnchor": 13.03909523809524,
+  "nativeCodeStates": 97,
+  "cacheBytes": 335408296,
+  "media": [
+    {
+      "file": "out/poptart-master.mp4",
+      "bytes": 10667348,
+      "lufs": -14.06,
+      "truePeak": -1.16
+    },
+    {
+      "file": "previews/poptart-preview-720p.mp4",
+      "bytes": 4926025,
+      "lufs": -14.08,
+      "truePeak": -1.14
+    }
+  ],
+  "audioGrid": {
+    "bpm": 126,
+    "mainAttackOrigin": 13.03909523809524,
+    "attackGridStdSeconds": 0.00031566724368648906,
+    "fittedBeats": 55,
+    "selectedDownbeat": 1.61052380952381,
+    "mainEntryCycle": 6,
+    "measuredBassRoots": [
+      "C2",
+      "G1",
+      "A1",
+      "F1",
+      "C2",
+      "G1",
+      "A1",
+      "F1"
+    ],
+    "nativeCycleFormula": "filmSeconds * bpm / 240"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "poptart-score-sheet",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {"node": ">=22"},
+  "scripts": {
+    "build": "nice -n 19 node scripts/build.mjs",
+    "lint": "nice -n 19 hyperframes lint .build",
+    "check": "nice -n 19 hyperframes check .build",
+    "render": "nice -n 19 node scripts/render.mjs",
+    "stills": "nice -n 19 hyperframes snapshot .build --at 2.8,7.5,12.2,19.2,25.2,30.5,33.5,38.8 --no-end --output previews/keyframes",
+    "verify": "nice -n 19 node scripts/verify.mjs",
+    "capture": "nice -n 19 node scripts/capture.mjs"
+  },
+  "devDependencies": {"hyperframes":"0.9.19","esbuild":"0.25.12","puppeteer-core":"25.16.0"}
+}

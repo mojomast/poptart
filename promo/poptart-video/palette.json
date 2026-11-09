@@ -1,0 +1,6 @@
+{
+  "ink":"#0B0D0A","panel":"#161A14","rule":"#2A3026",
+  "dim":"#6E7766","text":"#E9EDE3","lime":"#A3E635",
+  "error":"#FF5A3C","highlightFill":"rgba(163,230,53,0.22)",
+  "source":"Lime sampled from docs/assets/banner.png (163,230,53). UI captures retain their original Hermes theme colours."
+}

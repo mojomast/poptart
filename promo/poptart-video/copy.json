@@ -1,0 +1,17 @@
+{
+  "brand":"poptart",
+  "label":"POPTART / SCORE SHEET",
+  "intro":["LET'S MAKE","SOME","NOISE."],
+  "hermes":["A STRUDEL STUDIO","DOCKED INSIDE HERMES"],
+  "hermesTitle":["INSIDE","HERMES."],
+  "operations":["ONE TOOL.","ELEVEN OPS."],
+  "ops":["CREATE","EDIT","TEMPO","SECTIONS","REVISIONS"],
+  "highlights":["CODE THAT LIGHTS UP","AS IT PLAYS"],
+  "highlightTitle":["CODE THAT","LIGHTS UP."],
+  "continuation":["BAD EDIT?","THE LAST GOOD PATTERN","KEEPS PLAYING."],
+  "library":["KEEP EVERY","REVISION.","A LITTLE EVERY DAY."],
+  "drop":"MADE TO BE PLAYED.",
+  "end":"STRUDEL STUDIO FOR HERMES",
+  "url":"github.com/mojomast/poptart",
+  "credit":"MADE BY SLOPTIMUS PRIME"
+}
